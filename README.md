@@ -9,9 +9,13 @@ Saturday 8 August 2026 · Waimanga Room, Wellington City Council
 
 > How might we identify and map sudden changes in pedestrian or vehicle movement that could indicate disruption, unsafe conditions, evacuation or loss of access?
 
-A prototype could compare current movement with usual patterns and flag significant changes, correlating them with weather warnings, road closures or public reports. This could build on Pōneke Travel Insights, whose documented data limitations would need to stay visible in any emergency use.
+A prototype could compare current or recent movement with usual patterns and flag significant changes for investigation. It could also compare movement changes with weather warnings, road closures or public reports.
+
+This could build on Pōneke Travel Insights, which already allows users to examine movement patterns, busy periods and changes over time. The existing material notes that the data has limitations, which would need to be visible in any emergency use.
 
 **Desired outcome:** WCC receives another early indication of where an event may be affecting people, rather than relying only on individual reports.
+
+*The common theme is improving the flow and use of information between communities and Council before and during an event.*
 
 ---
 
