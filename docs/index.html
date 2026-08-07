@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang=en><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<title>Team 8 — data sources</title><style>
+:root{--ink:#16202c;--muted:#6b7a8c;--line:#e4e9ef}
+body{margin:0;font:14px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+color:var(--ink);background:#fbfcfd}
+.w{max-width:1080px;margin:0 auto;padding:32px 24px 72px}
+h1{font-size:24px;margin:0 0 4px;letter-spacing:-.02em}
+p.sub{color:var(--muted);margin:0 0 22px}
+table{border-collapse:collapse;width:100%;background:#fff;border:1px solid var(--line);
+border-radius:6px;overflow:hidden;font-size:13px}
+th,td{text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
+th{background:#f4f7fa;font-size:11px;text-transform:uppercase;letter-spacing:.04em;
+color:var(--muted);position:sticky;top:0}
+tr:last-child td{border-bottom:none}
+td.n{text-align:right;font-variant-numeric:tabular-nums}
+a{color:#2f6fb5}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;
+margin:0 0 22px}
+.c{background:#fff;border:1px solid var(--line);border-radius:6px;padding:11px 13px}
+.c b{font-size:21px;font-weight:650;display:block;letter-spacing:-.02em}
+.c span{color:var(--muted);font-size:12px}
+.note{border-left:3px solid #e8a33d;background:#fffaf2;padding:10px 14px;margin:0 0 22px;
+border-radius:0 5px 5px 0}
+code{background:#eef2f6;padding:1px 5px;border-radius:3px}
+</style></head><body><div class=w>
+<h1>Wellington movement &amp; hazard data — source index</h1>
+<p class=sub>Impact Lab, Team 8, problem 05. Every source we can reach, with its schema.</p>
+
+<div class=note><b>These are hazard-planning and after-action layers, not live emergency
+information.</b> The movement feed is T+1 — the newest data is always yesterday.
+In an emergency, call 111.</div>
+
+<div class=cards>
+<div class=c><b>81</b><span>sources catalogued</span></div>
+<div class=c><b>74</b><span>GIS datasets</span></div>
+<div class=c><b>35</b><span>with a local copy</span></div>
+<div class=c><b>32</b><span>profile reports</span></div>
+</div>
+
+<p><b>To explore interactively:</b> <code>just explore</code> — opens the marimo
+notebook against the full local data. This page is the static index; source names below
+link to their profile report where one exists.</p>
+
+<table><thead><tr><th>group</th><th>source</th><th>title</th><th>publisher</th>
+<th class=n>rows</th><th class=n>fields</th><th>note</th></tr></thead>
+<tbody>
+<tr><td>movement</td><td><a href="profiles/movement__daily_full.html">daily_full</a></td><td>Countline movement — daily_full</td><td>Wellington City Council / </td><td class=n>2401653</td><td class=n>5</td><td>local copy</td></tr>
+<tr><td>movement</td><td><a href="profiles/movement__hourly_2025.html">hourly_2025</a></td><td>Countline movement — hourly_2025</td><td>Wellington City Council / </td><td class=n>1449746</td><td class=n>13</td><td>local copy</td></tr>
+<tr><td>movement</td><td><a href="profiles/movement__hourly_recent.html">hourly_recent</a></td><td>Countline movement — hourly_recent</td><td>Wellington City Council / </td><td class=n>1038812</td><td class=n>13</td><td>local copy</td></tr>
+<tr><td>movement</td><td><a href="profiles/movement__meta.html">meta</a></td><td>Countline movement — meta</td><td>Wellington City Council / </td><td class=n>410</td><td class=n>16</td><td>local copy</td></tr>
+<tr><td>context</td><td>geonet_quakes</td><td>geonet quakes</td><td></td><td class=n>9</td><td class=n>18</td><td>local copy</td></tr>
+<tr><td>context</td><td>nz_holidays</td><td>nz holidays</td><td></td><td class=n>48</td><td class=n>3</td><td>local copy</td></tr>
+<tr><td>context</td><td>warnings_manual</td><td>warnings manual</td><td></td><td class=n>1</td><td class=n>2</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__active-faults.html">active-faults</a></td><td>NZ Active Faults (1:250k)</td><td>GNS Science</td><td class=n></td><td class=n>11</td><td>local copy</td></tr>
+<tr><td>gis</td><td>beach-exposure</td><td>NZ Beach Exposure to Wave & Swell Energy</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-cold-nights</td><td>Climate projection: cold nights (decrease in days per year)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-daily-rainfall</td><td>Climate projection: daily rainfall, 99th percentile (% change)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-diurnal-range</td><td>Climate projection: diurnal temperature range (annual change, °C</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-dry-days</td><td>Climate projection: dry days under 1 mm (change in days per year</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-gdd-10c</td><td>Climate projection: growing degree days, base 10°C (change in GD</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-gdd-5c</td><td>Climate projection: growing degree days, base 5°C (change in GDD</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-hot-days</td><td>Climate projection: hot days over 25°C (change in days per year)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-humidity</td><td>Climate projection: relative humidity (annual % change)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-max-temp</td><td>Climate projection: mean maximum temperature (annual change, °C)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-mean-temp</td><td>Climate projection: mean temperature (annual change, °C)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-min-temp</td><td>Climate projection: mean minimum temperature (annual change, °C)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-ped</td><td>Climate projection: potential evapotranspiration deficit (change</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-ped-days</td><td>Climate projection: PED days over 300 mm (change in days per yea</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-snow-days</td><td>Climate projection: snow days (decrease in days per year)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-soil-moisture-deficit</td><td>Climate projection: soil moisture deficit days (change in days p</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-solar-radiation</td><td>Climate projection: solar radiation (annual % change)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-total-rainfall</td><td>Climate projection: total rainfall (% change per year)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-wet-days-1mm</td><td>Climate projection: wet days over 1 mm (change in days per year)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-wet-days-25mm</td><td>Climate projection: wet days over 25 mm (change in days per year</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-wind-magnitude</td><td>Climate projection: windy days magnitude (99th percentile daily </td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>climate-windy-days</td><td>Climate projection: windy days over 10 m/s (change in days per y</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>coastal-erosion-index</td><td>Coastal Sensitivity Index: Erosion</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>coastal-hinterland</td><td>NZ Coastal Classification: Hinterland Characteristics</td><td>steinmetzt_NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__coastal-inundation-high.html">coastal-inundation-high</a></td><td>High Coastal Inundation Hazard (Proposed District Plan)</td><td>NIWA</td><td class=n></td><td class=n>12</td><td>local copy</td></tr>
+<tr><td>gis</td><td>coastal-inundation-index</td><td>Coastal Sensitivity Index: Inundation</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__coastal-inundation-medium.html">coastal-inundation-medium</a></td><td>Medium Coastal Inundation Hazard (Proposed District Plan)</td><td>NIWA</td><td class=n></td><td class=n>12</td><td>local copy</td></tr>
+<tr><td>gis</td><td>coastal-landform</td><td>NZ Coastal Classification: Coastal Landform Type</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__community-emergency-hubs.html">community-emergency-hubs</a></td><td>Community Emergency Hubs (WREMO)</td><td>WREMO</td><td class=n></td><td class=n>10</td><td>local copy</td></tr>
+<tr><td>gis</td><td>deprivation-2023</td><td>NZ Index of Deprivation 2023 (SA1)</td><td>University of Otago</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>earthquake-prone-buildings</td><td>Earthquake-Prone Building Locations</td><td>WCC/MBIE</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__electricity-outages.html">electricity-outages</a></td><td>National electricity outages (NEMA)</td><td>NEMA</td><td class=n></td><td class=n>14</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__emergency-routes.html">emergency-routes</a></td><td>Post-Quake Emergency Routes (WCC)</td><td>WCC</td><td class=n></td><td class=n>5</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__emergency-water-tanks.html">emergency-water-tanks</a></td><td>Emergency Water Tank Locations (WCC)</td><td>WCC</td><td class=n></td><td class=n>9</td><td>local copy</td></tr>
+<tr><td>gis</td><td>fault-hazard-overlay</td><td>Fault Hazard Overlays (Proposed District Plan)</td><td>GNS Science</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>flood-depths</td><td>Wellington City Modelled Flood Depths</td><td>WW / WCC - Jacobs</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>flood-exposure-map</td><td>Regional Flood Exposure Web Map</td><td></td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>flood-hazard-areas</td><td>Flood Hazard Areas (50/100/400-year ARI)</td><td>Phillip Cook (GWRC)</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__footpaths.html">footpaths</a></td><td>Footpaths</td><td></td><td class=n></td><td class=n>19</td><td>local copy</td></tr>
+<tr><td>gis</td><td>groundwater-monitoring</td><td>National Groundwater Monitoring Programme</td><td>GNS</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__landslide-features.html">landslide-features</a></td><td>Landslide Morphology: Geomorphic Features (GNS SLIDE)</td><td>GNS Science</td><td class=n></td><td class=n>5</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__landslide-lines.html">landslide-lines</a></td><td>Landslide Lines (GNS QMap 1:250k)</td><td>GNS Science</td><td class=n></td><td class=n>5</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__landslide-materials.html">landslide-materials</a></td><td>Landslide Morphology: Interpreted Materials (GNS SLIDE)</td><td>GNS Science</td><td class=n></td><td class=n>6</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__landslide-process.html">landslide-process</a></td><td>Landslide Morphology: Geomorphic Process (GNS SLIDE)</td><td>GNS Science</td><td class=n></td><td class=n>8</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__liquefaction-overlay.html">liquefaction-overlay</a></td><td>Liquefaction Hazard Overlay (Proposed District Plan)</td><td>GNS Science</td><td class=n></td><td class=n>12</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__liquefaction-regional.html">liquefaction-regional</a></td><td>Earthquake Liquefaction Potential (Regional)</td><td>GNS Science</td><td class=n></td><td class=n>7</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__metservice-warnings.html">metservice-warnings</a></td><td>MetService Weather Warnings (CAP)</td><td>Eagle Technologies</td><td class=n></td><td class=n>30</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__nema-cap-alerts.html">nema-cap-alerts</a></td><td>NEMA Emergency Mobile Alert polygons (CAP)</td><td>NEMA</td><td class=n></td><td class=n>21</td><td>local copy</td></tr>
+<tr><td>gis</td><td>nz-searise</td><td>Sea-Level Rise & Vertical Land Movement (NZ SeaRise)</td><td>ARC,GNS Science, and NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>nzta-warnings</td><td>NZTA Highway Warnings</td><td>Eagle Technologies</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__overland-flowpath.html">overland-flowpath</a></td><td>Overland Flowpath (Proposed District Plan)</td><td>Wellington Water, WCC, GWR</td><td class=n></td><td class=n>12</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__parks-tracks.html">parks-tracks</a></td><td>Parks Tracks</td><td></td><td class=n></td><td class=n>35</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__ponding-areas.html">ponding-areas</a></td><td>Ponding Inundation Area (Proposed District Plan)</td><td>Wellington Water, WCC, GWR</td><td class=n></td><td class=n>12</td><td>local copy</td></tr>
+<tr><td>gis</td><td>rainfall-observations</td><td>Rainfall Observations (Hilltop telemetry)</td><td></td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>riskscape-coastal</td><td>Coastal Hazard Exposure, Impacts & Risk (RiskScape)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>river-levels-viewer</td><td>River Levels & Rainfall Viewer</td><td></td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__roads.html">roads</a></td><td>Road Categories</td><td></td><td class=n></td><td class=n>21</td><td>local copy</td></tr>
+<tr><td>gis</td><td>sea-level-rise</td><td>Sea Level Rise Model Grids (1-5 m above MHWS-10)</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>shaking-layers</td><td>GNS ShakingLayers (Ground Motion)</td><td>GNS</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>slope-degrees</td><td>Slope in Degrees (1 m LiDAR)</td><td></td><td class=n></td><td class=n>0</td><td>raster</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__slope-failure.html">slope-failure</a></td><td>Earthquake-Induced Slope Failure Susceptibility</td><td>GNS Science</td><td class=n></td><td class=n>6</td><td>local copy</td></tr>
+<tr><td>gis</td><td>slope-over-25</td><td>Slope Over 25 Degrees (1 m LiDAR)</td><td></td><td class=n></td><td class=n>0</td><td>raster</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__soil-classification.html">soil-classification</a></td><td>Soil Classification (Wellington City)</td><td>GNS Science</td><td class=n></td><td class=n>6</td><td>local copy</td></tr>
+<tr><td>gis</td><td>soil-classification-regional</td><td>Soil Classification (Regional)</td><td></td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>storm-surge</td><td>Storm Surge Coastal Flooding Susceptibility</td><td>NIWA</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__stream-corridor.html">stream-corridor</a></td><td>Stream Corridor Flood Zone (Proposed District Plan)</td><td>Wellington Water, WCC, GWR</td><td class=n></td><td class=n>12</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__transport-sensors.html">transport-sensors</a></td><td>Transport Sensor Cut Lines</td><td>Viva City</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td>tree-cover</td><td>Tree Cover</td><td></td><td class=n></td><td class=n>4</td><td></td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__tsunami-evacuation-zones.html">tsunami-evacuation-zones</a></td><td>Tsunami Evacuation Zones (Wellington City)</td><td>GNS Science</td><td class=n></td><td class=n>14</td><td>local copy</td></tr>
+<tr><td>gis</td><td>tsunami-hazard-overlay</td><td>Tsunami Hazard Overlay (Proposed District Plan)</td><td>GNS Science</td><td class=n></td><td class=n>0</td><td>needs layer=</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__tsunami-zones-regional.html">tsunami-zones-regional</a></td><td>Tsunami Evacuation Zones (Wellington Region, 2019)</td><td>GNS Science</td><td class=n></td><td class=n>10</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__water-network-faults.html">water-network-faults</a></td><td>Wellington Water Network Faults (live)</td><td>Wellington Water</td><td class=n></td><td class=n>30</td><td>local copy</td></tr>
+<tr><td>gis</td><td><a href="profiles/gis__wind-zones.html">wind-zones</a></td><td>Wind Zones</td><td></td><td class=n></td><td class=n>6</td><td>local copy</td></tr>
+</tbody></table>
+
+<p class=sub style="margin-top:24px">Data belongs to its publishers — WCC, Greater
+Wellington, GNS Science, NIWA, Wellington Water, MBIE, NZTA, MetService — and licences
+vary per dataset. Check before publishing anything derived.</p>
+</div></body></html>

@@ -63,6 +63,59 @@ Three traps worth knowing before you lose an hour to them:
 - **One query is silently capped** (`footpaths` has 8,130 features; a request
   returns 2,000). Page properly, or check `exceededTransferLimit`.
 
+## What's in this repo
+
+```
+team8/poc_1/      Pōneke Pulse — the prototype (pipeline + web app)
+team8/fetch_data/ pull scripts, source inventory, profiler; vendor/ holds wcc_gis.py
+data/catalogue/   sources.json — all 81 sources with their schemas
+notebooks/        explore.py — data exploration notebook (marimo)
+docs/             static source index
+```
+
+**`just poc-dev`** runs the prototype · **`just explore`** opens the notebook ·
+`just pull` fetches the source data · `just scope` rebuilds the inventory and profiles.
+
+### The source data is not committed
+
+`data/raw/` (~66 MB of parquet and GeoJSON) and `docs/profiles/` (~55 MB of generated
+reports) are gitignored. The data belongs to its publishers, not to us.
+
+**The prototype still works from a fresh clone** — it reads only the derived artefacts
+in `team8/poc_1/web/public/data`, which are committed. What a clone loses until you run
+`just pull` is the marimo notebook and the ability to re-run the pipeline.
+
+### Needs a key
+
+`echo 'TRAVEL_INSIGHTS_KEY=<key>' > .env` — gitignored. The key is readable from the
+Travel Insights dashboard JS bundle; it is WCC's, and permission to depend on it is
+unconfirmed, so it is not committed. There is also a public, no-auth S3 mirror of the
+same data (see below) if that becomes a problem.
+
+### The movement feed
+
+Not part of the 74-dataset GIS pack — that pack is the corroboration side. Movement
+comes from Pōneke Travel Insights over Opendatasoft: `countline-mobility-hourly-summary`
+(5.39M rows), `countline-mobility-daily`, `countline-meta-info` (410 countlines). There
+is also a **public, no-auth S3 mirror** of the same data as monthly CSV, which is our
+fallback if the key in the public dashboard bundle turns out to be off-limits.
+
+### Five things the data tells you before you model anything
+
+1. **Missing rows are not zeros, and they carry the signal.** The feed omits a
+   (countline, direction, hour) cell when there was no activity — ~10% of cells on a
+   normal day, 13% on 23 Oct 2025. "Movement stopped" arrives as row *absence*, so a
+   naive `GROUP BY` discards exactly what we are hunting.
+2. **The feed is T+1.** The newest data is always yesterday. Live detection is not
+   available and claiming it would be the easiest thing for a judge to catch.
+3. **Holidays and broken ingest own the leaderboard.** Of the 15 biggest citywide drops
+   in 756 days, 12 are public holidays or partial ingests. The real emergency ranks
+   tenth. The guard is not a feature, it is the credibility.
+4. **Pedestrians and cars diverge, and the ratio is a diagnosis.** On 23 Oct the midday
+   pedestrians-per-car ratio collapsed from 0.84 to 0.24 — people stop walking first.
+5. **Coverage is sparse and per-mode.** 386 active countlines over a whole city, and
+   many are footpath counters blind to vehicles. Absence of an anomaly means nothing.
+
 ## Schedule
 
 | Time | What |

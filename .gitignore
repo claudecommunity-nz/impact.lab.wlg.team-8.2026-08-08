@@ -1,0 +1,27 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+.env
+notebooks/__marimo__/
+.playwright-mcp/
+*.tsbuildinfo
+
+# --- source data --------------------------------------------------------
+# ~66MB of parquet and GeoJSON that belongs to its publishers, not to us.
+# Regenerate with `just pull` (needs TRAVEL_INSIGHTS_KEY in .env; ~5 min).
+#
+# The app does NOT read any of this at runtime — it reads only the derived
+# artefacts in team8/poc_1/web/public/data, which ARE committed. What a fresh
+# clone loses without a re-pull is the marimo notebook and the ability to
+# re-run the pipeline. The demo itself works from the clone.
+data/raw/
+data/derived/
+
+# --- generated reports --------------------------------------------------
+# ~55MB of self-contained profile HTML. Regenerate with `just profile`.
+docs/profiles/
+
+# --- scratch ------------------------------------------------------------
+/*.png

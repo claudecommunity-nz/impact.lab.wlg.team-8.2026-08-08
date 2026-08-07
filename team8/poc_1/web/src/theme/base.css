@@ -1,0 +1,156 @@
+/*
+ * Base layer. Reset, root surface, type utilities.
+ * NO COLOUR LITERALS. Every colour is rgb(var(--pp-color-*)).
+ * The only exceptions are the black-only shadow tokens in tokens.ts, which are
+ * palette-invariant by design (shadows separate floating layers from the map;
+ * they are not part of the palette).
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: rgb(var(--pp-color-bg-base));
+  color: rgb(var(--pp-color-text-primary));
+  font-family: var(--pp-font-sans);
+  font-size: var(--pp-type-body-size);
+  line-height: var(--pp-type-body-lh);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Numbers never jitter during animation. */
+.pp-mono,
+[class*='pp-metric'],
+code,
+kbd,
+samp {
+  font-family: var(--pp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus is this, everywhere, no exceptions. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid rgb(var(--pp-color-status-info));
+  outline-offset: 2px;
+}
+
+::selection {
+  background: rgb(var(--pp-color-status-info) / 0.3);
+}
+
+/* --- type utilities: one class per scale token ----------------------- */
+.pp-t-display,
+.pp-t-h1,
+.pp-t-h2,
+.pp-t-h3,
+.pp-t-body-lg,
+.pp-t-body,
+.pp-t-label,
+.pp-t-caption,
+.pp-t-metric-xl,
+.pp-t-metric,
+.pp-t-mono-sm {
+  margin: 0;
+}
+
+.pp-t-display {
+  font: var(--pp-type-display-weight) var(--pp-type-display-size) / var(--pp-type-display-lh)
+    var(--pp-font-serif);
+  letter-spacing: var(--pp-type-display-tracking);
+}
+.pp-t-h1 {
+  font: var(--pp-type-h1-weight) var(--pp-type-h1-size) / var(--pp-type-h1-lh) var(--pp-font-sans);
+  letter-spacing: var(--pp-type-h1-tracking);
+}
+.pp-t-h2 {
+  font: var(--pp-type-h2-weight) var(--pp-type-h2-size) / var(--pp-type-h2-lh) var(--pp-font-sans);
+  letter-spacing: var(--pp-type-h2-tracking);
+}
+.pp-t-h3 {
+  font: var(--pp-type-h3-weight) var(--pp-type-h3-size) / var(--pp-type-h3-lh) var(--pp-font-sans);
+  letter-spacing: var(--pp-type-h3-tracking);
+}
+.pp-t-body-lg {
+  font: var(--pp-type-body-lg-weight) var(--pp-type-body-lg-size) / var(--pp-type-body-lg-lh)
+    var(--pp-font-sans);
+}
+.pp-t-body {
+  font: var(--pp-type-body-weight) var(--pp-type-body-size) / var(--pp-type-body-lh)
+    var(--pp-font-sans);
+}
+.pp-t-label {
+  font: var(--pp-type-label-weight) var(--pp-type-label-size) / var(--pp-type-label-lh)
+    var(--pp-font-sans);
+  letter-spacing: var(--pp-type-label-tracking);
+  text-transform: uppercase;
+}
+.pp-t-caption {
+  font: var(--pp-type-caption-weight) var(--pp-type-caption-size) / var(--pp-type-caption-lh)
+    var(--pp-font-sans);
+  letter-spacing: var(--pp-type-caption-tracking);
+}
+.pp-t-metric-xl {
+  font: var(--pp-type-metric-xl-weight) var(--pp-type-metric-xl-size) /
+    var(--pp-type-metric-xl-lh) var(--pp-font-mono);
+  letter-spacing: var(--pp-type-metric-xl-tracking);
+  font-variant-numeric: tabular-nums;
+}
+.pp-t-metric {
+  font: var(--pp-type-metric-weight) var(--pp-type-metric-size) / var(--pp-type-metric-lh)
+    var(--pp-font-mono);
+  letter-spacing: var(--pp-type-metric-tracking);
+  font-variant-numeric: tabular-nums;
+}
+.pp-t-mono-sm {
+  font: var(--pp-type-mono-sm-weight) var(--pp-type-mono-sm-size) / var(--pp-type-mono-sm-lh)
+    var(--pp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- colour utilities ------------------------------------------------ */
+.pp-c-primary {
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-c-secondary {
+  color: rgb(var(--pp-color-text-secondary));
+}
+/* text-muted is 4.09:1 on surface-3 — enforce >=18px, never for a caveat. */
+.pp-c-muted {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+/* --- shared surface recipes ------------------------------------------ */
+.pp-surface {
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-panel);
+  /* the faint top-lip that makes a dark surface read as a physical bezel */
+  box-shadow:
+    inset 0 1px 0 rgb(var(--pp-color-text-primary) / 0.05),
+    var(--pp-elev-1);
+}
+
+.pp-hairline {
+  border-top: 1px solid rgb(var(--pp-color-border-subtle) / 0.07);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

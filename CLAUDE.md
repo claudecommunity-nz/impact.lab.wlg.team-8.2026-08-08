@@ -93,4 +93,3 @@ Three traps worth knowing before you lose an hour to them:
 ## Conventions
 
 - Keep the README's problem statement in sync if the scope shifts during the day.
-- Commit early and often — the repo is the submission.
