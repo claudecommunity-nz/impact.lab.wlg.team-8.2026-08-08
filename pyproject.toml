@@ -1,0 +1,23 @@
+[project]
+name = "team8"
+version = "0.1.0"
+description = "Impact Lab Wellington — problem 05, data scoping and exploration"
+requires-python = ">=3.12"
+dependencies = [
+    "duckdb>=1.1",
+    "polars>=1.0",
+    "pyarrow>=17",
+    "requests>=2.32",
+    "marimo>=0.23",
+    "altair>=5.4",
+    "pandas>=2.2",
+    # Maintained continuation of ydata-profiling (import name: data_profiling).
+    # It still does `import pkg_resources` without declaring setuptools, so we pin it
+    # ourselves: py3.12 dropped pkg_resources from stdlib and setuptools removed it in 81.
+    "fg-data-profiling>=4.19",
+    "setuptools>=75,<81",
+]
+
+# Deliberately no [build-system]: this is never installed as a package, it is a
+# directory of scripts run with `uv run`. src-layout and a wheel target would be
+# ceremony for an artefact nobody builds.

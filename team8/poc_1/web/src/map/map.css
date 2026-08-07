@@ -1,0 +1,295 @@
+/* The map is the only lit object in the room. NO COLOUR LITERALS. */
+
+.pp-map {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  background: rgb(var(--pp-color-bg-void));
+  overflow: hidden;
+}
+
+.pp-map__base,
+.pp-map__deck {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.pp-map__deck {
+  z-index: 2;
+}
+
+/* Refusal mode: the pulse is frozen and the viewport is hatched. Not an
+   error state — a designed statement that we could not see. */
+.pp-map__hatch {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(var(--pp-color-sem-suppressed) / 0.16) 0 2px,
+    transparent 2px 9px
+  );
+}
+
+/* Docked inside the free band between the rails, clear of the legend bar. At
+   left: space-3 it sat entirely behind the left card and the whole selection
+   readout — the map's only evidence surface — was invisible. */
+.pp-map__readout {
+  position: absolute;
+  z-index: 4;
+  left: calc(var(--pp-rail-left) + var(--pp-space-6));
+  bottom: 46px;
+  width: 340px;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-4);
+  border-radius: var(--pp-radius-md);
+  background: rgb(var(--pp-color-surface-scrim) / var(--pp-alpha-scrim));
+  backdrop-filter: blur(12px) saturate(0.8);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+  box-shadow: var(--pp-elev-2);
+  pointer-events: none;
+}
+.pp-map__readout-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pp-map__readout-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--pp-space-3);
+}
+/* label · observed · usual · change, so the two numbers the whole encoding is
+   about sit next to each other and the reader does not have to hold one. */
+.pp-map__readout-grid--4 {
+  grid-template-columns: auto 1fr 1fr auto;
+  justify-items: end;
+}
+.pp-map__readout-grid--4 > :first-child,
+.pp-map__readout-grid--4 > :nth-child(4n + 1) {
+  justify-self: start;
+}
+/* The column clips at 2,400/hr. Where it does, the figure says so. */
+.pp-map__clip {
+  color: rgb(var(--pp-color-status-provisional));
+}
+/* The countline is one of several at this camera, and it is subordinate to the
+   site above it. The rule says so without a heading. */
+.pp-map__readout-member {
+  padding-top: var(--pp-space-2);
+  border-top: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Clears the legend bar, which now sits flush to the bottom edge and is wide
+   enough to have run straight through this line. */
+.pp-map__attrib {
+  position: absolute;
+  z-index: 4;
+  right: var(--pp-space-2);
+  bottom: 42px;
+  text-align: right;
+  color: rgb(var(--pp-color-text-muted));
+  pointer-events: none;
+}
+
+/* The replay stamp. Top-left so a crop of the map keeps it, which is the
+   whole point: a shared screenshot must not read as a live situation report. */
+.pp-map__replay {
+  position: absolute;
+  z-index: 5;
+  top: var(--pp-space-2);
+  left: var(--pp-space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-1) var(--pp-space-2);
+  border-radius: var(--pp-radius-pill);
+  background: rgb(var(--pp-color-surface-1) / 0.88);
+  border: 1px solid rgb(var(--pp-color-border-strong) / var(--pp-alpha-border-strong));
+  color: rgb(var(--pp-color-text-primary));
+  pointer-events: none;
+}
+.pp-map__replay-tag {
+  color: rgb(var(--pp-color-status-provisional));
+}
+.pp-map__replay-not-live {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+/* The map's four corners all belong to a floating panel now, so the compass
+   and the legend share one bar in the strip between them.
+
+   It used to be a 620px card three lines tall floating a little above the
+   bottom edge, which put it squarely on Te Aro and the southern CBD in every
+   demo frame — a legend occluding the data it exists to explain, permanently,
+   in the default state. Narrowing it once was not enough, because the problem
+   was its HEIGHT and its distance from the edge, not its width. It is now one
+   row, flush to the bottom edge: same information, a third of the area, and
+   what it does cover is the bottom margin of the canvas rather than a
+   neighbourhood. Everything past the four headline clauses moved into the
+   disclosure. */
+.pp-map__chrome {
+  position: absolute;
+  z-index: 5;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(900px, 96%);
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-3);
+  padding: var(--pp-space-1) var(--pp-space-3);
+  border-radius: var(--pp-radius-md) var(--pp-radius-md) 0 0;
+  background: rgb(var(--pp-color-surface-1) / 0.9);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-bottom: none;
+  box-shadow: var(--pp-elev-1);
+  pointer-events: none;
+}
+
+/* The compass. Bearing 90 is the measured winner for occlusion, which puts
+   north to the left; this is what pays for that. */
+.pp-map__compass {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--pp-radius-pill);
+  background: rgb(var(--pp-color-surface-1) / 0.88);
+  border: 1px solid rgb(var(--pp-color-border-strong) / var(--pp-alpha-border-strong));
+  color: rgb(var(--pp-color-text-secondary));
+  pointer-events: none;
+}
+.pp-map__compass svg {
+  width: 26px;
+  height: 26px;
+  transform-origin: 50% 50%;
+}
+.pp-map__compass path {
+  fill: currentColor;
+}
+.pp-map__compass text {
+  fill: currentColor;
+  font-family: var(--pp-font-sans);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* The drawn key. One case, one solid, one gap — the encoding in 34px, which
+   lands before any of the prose beside it does. */
+.pp-map__key {
+  flex: none;
+  width: 26px;
+  height: 31px;
+  overflow: visible;
+}
+.pp-map__key-case {
+  fill: rgb(var(--pp-color-sem-ghost) / 0.36);
+  stroke: rgb(var(--pp-color-sem-ghost-core) / 0.62);
+  stroke-width: 1;
+}
+.pp-map__key-solid {
+  fill: rgb(var(--pp-color-sem-deficit));
+}
+/* The measured span, drawn as a dimension tick because that is what it is:
+   the shortfall in movements per hour, not a decorative bracket. */
+.pp-map__key-gap {
+  stroke: rgb(var(--pp-color-text-muted));
+  stroke-width: 1;
+  fill: none;
+}
+
+/* Three channels, three words each, on one row. Half the map renders neutral by
+   design once the noise floor lands and the suburbs are stubs; without this
+   much at least it reads broken. */
+.pp-map__coverage {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px var(--pp-space-4);
+  color: rgb(var(--pp-color-text-muted));
+  white-space: nowrap;
+}
+.pp-map__coverage strong {
+  color: rgb(var(--pp-color-text-secondary));
+  font-weight: 600;
+}
+
+/* The two footprints, drawn. Naming two sides of a site stopped being true the
+   moment the camera could rotate. */
+.pp-map__pair {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pp-space-1);
+}
+.pp-map__pair svg {
+  width: 34px;
+  height: 15px;
+  overflow: visible;
+}
+.pp-map__key-ped,
+.pp-map__key-veh {
+  fill: rgb(var(--pp-color-sem-ghost) / 0.42);
+  stroke: rgb(var(--pp-color-sem-ghost-core) / 0.8);
+  stroke-width: 1;
+}
+
+/* The bar is pointer-transparent so drags reach the deck controller; the
+   disclosure is the one thing in it that has to take a click back. */
+.pp-map__more {
+  pointer-events: auto;
+  position: relative;
+}
+/* The bar is flush to the bottom edge, so the disclosure opens upward. */
+.pp-map__more-body {
+  position: absolute;
+  bottom: calc(100% + var(--pp-space-2));
+  right: 0;
+  width: min(52ch, 70vw);
+  padding: var(--pp-space-3);
+  border-radius: var(--pp-radius-md);
+  background: rgb(var(--pp-color-surface-1) / 0.96);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+  box-shadow: var(--pp-elev-2);
+  white-space: normal;
+}
+.pp-map__more > summary {
+  cursor: pointer;
+  list-style: none;
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-map__more > summary::-webkit-details-marker {
+  display: none;
+}
+.pp-map__more > summary::after {
+  content: ' ▸';
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-map__more[open] > summary::after {
+  content: ' ▾';
+}
+.pp-map__more > summary:hover {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-map__more p {
+  margin: var(--pp-space-1) 0 0;
+  max-width: 52ch;
+}
+
+/* MapLibre injects its own control chrome; we use none of it. */
+.pp-map .maplibregl-control-container {
+  display: none;
+}

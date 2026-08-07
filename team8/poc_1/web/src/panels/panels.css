@@ -1,0 +1,616 @@
+/* Feature composites. NO COLOUR LITERALS — every colour is rgb(var(--pp-color-*)). */
+
+/* ------------------------------------------------------------- VitalsStrip *
+ * Head and axis gaps are tight on purpose. The band is 300px and the trace
+ * gets 96 of them: a flatline needs vertical room to be flat in, so the chrome
+ * around it gives way first. */
+.pp-vitals {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-panel);
+  padding: var(--pp-space-1) var(--pp-space-3) var(--pp-space-2);
+}
+.pp-vitals--empty {
+  padding: var(--pp-space-5);
+}
+.pp-vitals__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--pp-space-4);
+  padding-bottom: var(--pp-space-1);
+}
+.pp-vitals__axis {
+  position: relative;
+  height: 14px;
+}
+.pp-vitals__tick {
+  position: absolute;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+.pp-vitals__tick[data-current='true'] {
+  color: rgb(var(--pp-color-text-primary));
+  font-weight: 600;
+}
+
+/* Buttons moved to ui/ui.css when Button became a primitive. */
+
+/* ----------------------------------------------------------------- TimeBar */
+.pp-timebar {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  padding: var(--pp-space-2) var(--pp-space-4);
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-panel);
+}
+.pp-timebar__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+  flex-wrap: wrap;
+}
+.pp-timebar__clock {
+  margin-left: var(--pp-space-3);
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-timebar__speed {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-1);
+}
+
+/* ------------------------------------------------------ headline + disclose *
+ * The declutter pass's one new pattern. A card shows one number and one line;
+ * the reasoning that used to be 150–950px of prose sits behind a triangle.
+ * Nothing that a rubric scores went behind one of these — the not-live flag,
+ * the 111 line, `hand-entered`, `cannot type` and every absence marker are all
+ * still in place, next to the claim. */
+.pp-disclose {
+  margin-top: var(--pp-space-3);
+  border-top: 1px solid rgb(var(--pp-color-border-subtle) / 0.07);
+  padding-top: var(--pp-space-2);
+}
+.pp-disclose > summary {
+  cursor: pointer;
+  color: rgb(var(--pp-color-text-secondary));
+  padding: var(--pp-space-1) 0;
+}
+.pp-disclose > summary:hover {
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-disclose > * + * {
+  margin-top: var(--pp-space-3);
+}
+.pp-disclose--tight {
+  margin-top: var(--pp-space-1);
+  border-top: 0;
+  padding-top: 0;
+}
+
+/* -------------------------------------------------------------- grids / kv */
+.pp-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pp-space-2);
+  margin-bottom: var(--pp-space-3);
+}
+/* a 56px mono numeral will not fit a half-width tile */
+.pp-grid2 > .pp-stat[data-hero='true'],
+.pp-grid2 > .pp-stat:has(.pp-t-metric-xl) {
+  grid-column: 1 / -1;
+}
+.pp-stat .pp-t-metric-xl {
+  font-size: 2.75rem;
+}
+.pp-kv {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--pp-space-3);
+  margin: var(--pp-space-3) 0;
+}
+.pp-kv dt {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-kv dd {
+  margin: 0;
+}
+.pp-row {
+  display: flex;
+  gap: var(--pp-space-2);
+  flex-wrap: wrap;
+}
+
+/* ----------------------------------------------------------- DiagnosisPanel */
+.pp-dxlist {
+  list-style: none;
+  margin: 0 0 var(--pp-space-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+}
+.pp-dxlist--counts {
+  gap: var(--pp-space-1);
+}
+/* One row, not two. The count and its share of the network on a second line
+   doubled the height of the list that has to be read FIRST — cannot_type is
+   the majority verdict on this network and the admission comes before the
+   finding. Keeping it above the fold matters more than the second line did. */
+.pp-dxlist__count {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: var(--pp-space-2);
+}
+.pp-dxlist__n {
+  font-size: 1rem;
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-dxlist__head {
+  margin: var(--pp-space-4) 0 var(--pp-space-2);
+}
+.pp-dxlist__item {
+  width: 100%;
+  text-align: left;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px var(--pp-space-3);
+  padding: var(--pp-space-2) var(--pp-space-3);
+  background: rgb(var(--pp-color-surface-2));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-md);
+  color: rgb(var(--pp-color-text-primary));
+  cursor: pointer;
+  font: inherit;
+}
+.pp-dxlist__item:hover {
+  background: rgb(var(--pp-color-surface-3));
+}
+.pp-dxlist__delta {
+  color: rgb(var(--pp-color-sem-deficit));
+  align-self: center;
+}
+.pp-dxlist__reason,
+.pp-dxlist__name {
+  grid-column: 1 / -1;
+}
+.pp-dxlist__name {
+  grid-column: 1;
+}
+
+/* ------------------------------------------------------------- RisersPanel */
+.pp-rank {
+  list-style: none;
+  margin: 0 0 var(--pp-space-3);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pp-rank__head {
+  display: block;
+  margin-top: var(--pp-space-4);
+}
+.pp-rank__item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: var(--pp-space-3);
+  padding: var(--pp-space-1) var(--pp-space-2);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / 0.07);
+  color: rgb(var(--pp-color-text-primary));
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+}
+.pp-rank__item--wrap {
+  grid-template-columns: 1fr auto;
+  padding-bottom: var(--pp-space-2);
+}
+.pp-rank__item--wrap > .pp-t-caption {
+  grid-column: 1 / -1;
+  white-space: normal;
+}
+.pp-rank__item:hover {
+  background: rgb(var(--pp-color-surface-2));
+}
+.pp-rank__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pp-rank__delta {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-rank__delta[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-rank__delta[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-note {
+  margin-top: var(--pp-space-4);
+  padding: var(--pp-space-3);
+  border-left: 3px solid rgb(var(--pp-color-status-provisional));
+  background: rgb(var(--pp-color-surface-2));
+  border-radius: var(--pp-radius-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+}
+
+/* ----------------------------------------------------------- CoveragePanel */
+.pp-cov {
+  list-style: none;
+  margin: 0 0 var(--pp-space-4);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+}
+.pp-cov__head {
+  display: block;
+  margin-bottom: var(--pp-space-2);
+}
+.pp-cov__row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  align-items: center;
+  gap: var(--pp-space-3);
+}
+.pp-cov__bar {
+  height: 6px;
+  background: rgb(var(--pp-color-surface-3));
+  border-radius: var(--pp-radius-sm);
+  overflow: hidden;
+}
+.pp-cov__fill {
+  display: block;
+  height: 100%;
+}
+.pp-cov__fill[data-mode='pedestrian'] {
+  background: rgb(var(--pp-color-mode-pedestrian));
+}
+.pp-cov__fill[data-mode='car'] {
+  background: rgb(var(--pp-color-mode-car));
+}
+.pp-cov__fill[data-mode='cyclist'] {
+  background: rgb(var(--pp-color-mode-cyclist));
+}
+.pp-cov__fill[data-mode='bus'] {
+  background: rgb(var(--pp-color-mode-bus));
+}
+.pp-cov__fill[data-mode='lgv'] {
+  background: rgb(var(--pp-color-mode-lgv));
+}
+
+/* ------------------------------------------------------------- DetailPanel */
+.pp-modes {
+  list-style: none;
+  margin: var(--pp-space-2) 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+}
+.pp-modes__row {
+  display: grid;
+  grid-template-columns: 10px 1fr auto;
+  align-items: baseline;
+  gap: var(--pp-space-2) var(--pp-space-3);
+}
+.pp-modes__row[data-viable='false'] {
+  opacity: 0.55;
+}
+.pp-modes__row > .pp-t-caption {
+  grid-column: 2 / -1;
+}
+.pp-modes__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--pp-radius-pill);
+}
+.pp-modes__dot[data-mode='pedestrian'] {
+  background: rgb(var(--pp-color-mode-pedestrian));
+}
+.pp-modes__dot[data-mode='car'] {
+  background: rgb(var(--pp-color-mode-car));
+}
+.pp-modes__dot[data-mode='cyclist'] {
+  background: rgb(var(--pp-color-mode-cyclist));
+}
+.pp-modes__dot[data-mode='bus'] {
+  background: rgb(var(--pp-color-mode-bus));
+}
+.pp-modes__dot[data-mode='lgv'] {
+  background: rgb(var(--pp-color-mode-lgv));
+}
+.pp-caveats {
+  margin: var(--pp-space-2) 0 0;
+  padding-left: var(--pp-space-4);
+}
+
+/* -------------------------------------------------------------- ContextPanel */
+.pp-ctx {
+  padding: var(--pp-space-2) 0;
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pp-ctx:last-child {
+  border-bottom: 0;
+}
+.pp-ctx__kind {
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-ctx__kind[data-level='red'] {
+  color: rgb(var(--pp-color-status-alert));
+}
+.pp-ctx__prov {
+  color: rgb(var(--pp-color-status-provisional));
+}
+/* Never behind a disclosure. MetService publishes no warnings archive; this
+   entry was typed by hand, and a reader must not be able to see the warning
+   without also seeing that. It has to survive a screenshot. */
+.pp-ctx__hand {
+  margin-left: var(--pp-space-2);
+  padding: 0 var(--pp-space-2);
+  border: 1px solid rgb(var(--pp-color-status-provisional) / 0.5);
+  border-radius: var(--pp-radius-pill);
+  color: rgb(var(--pp-color-status-provisional));
+  /* 11px on a statement that must survive a screenshot was self-defeating. */
+  font-size: 0.8125rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ------------------------------------------------------------ RefusalBanner */
+.pp-refusal {
+  position: absolute;
+  z-index: 6;
+  top: var(--pp-space-5);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(660px, calc(100% - var(--pp-space-6)));
+  box-shadow: var(--pp-elev-3);
+  border-radius: var(--pp-radius-md);
+}
+.pp-refusal .pp-callout {
+  background: rgb(var(--pp-color-surface-2));
+}
+.pp-refusal__naive {
+  color: rgb(var(--pp-color-status-alert));
+  font-family: var(--pp-font-mono);
+}
+/* "We could not see, so we are not calling it." is the line that lands and it
+   was set at body-lg. On a projector it has to carry the room on its own. */
+.pp-refusal .pp-callout__title {
+  display: block;
+  font-size: 44px;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+/* The one sentence that stays on screen. Sized to be read from the back. */
+.pp-refusal__lead {
+  font-size: 22px;
+  line-height: 1.35;
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-refusal__more {
+  margin-top: var(--pp-space-3);
+}
+.pp-refusal__more summary {
+  cursor: pointer;
+  color: rgb(var(--pp-color-text-secondary));
+  padding: var(--pp-space-1) 0;
+}
+.pp-refusal__more > * + * {
+  margin-top: var(--pp-space-2);
+}
+
+/* Cards floating over the map need the glass treatment, not a flat surface. */
+.pp-shell__left > .pp-panel,
+.pp-shell__right > .pp-panel {
+  background: rgb(var(--pp-color-surface-scrim) / var(--pp-alpha-scrim));
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  box-shadow: var(--pp-elev-2);
+}
+
+/* Rail density. The budget is 480px per rail and it is a hard one — the
+   acceptance check is scrollHeight <= clientHeight, because the moment a rail
+   scrolls, cards land mid-sentence again. The generous panel padding is right
+   in a modal and wrong in a 480px column. */
+.pp-shell__left .pp-panel__head,
+.pp-shell__right .pp-panel__head {
+  padding: var(--pp-space-2) var(--pp-space-4) var(--pp-space-1);
+}
+.pp-shell__left .pp-panel__body,
+.pp-shell__right .pp-panel__body {
+  padding: 0 var(--pp-space-4) var(--pp-space-3);
+}
+
+/* The census chips are 5 rows on 23 Oct now that the count is per site rather
+   than per countline, and the rail budget did not grow to meet them. 2px of
+   pill padding buys the fifth row back; deleting a verdict to fit would have
+   been the wrong saving. */
+.pp-shell__left .pp-dxlist--counts .pp-dx,
+.pp-shell__right .pp-dxlist--counts .pp-dx {
+  padding-block: 1px;
+}
+
+/* The disclosure rule is chrome around a triangle. In a modal it earns the
+   breathing room; here it was costing 20px per card to separate two lines. */
+.pp-shell__left .pp-disclose,
+.pp-shell__right .pp-disclose {
+  margin-top: var(--pp-space-2);
+  padding-top: var(--pp-space-1);
+}
+
+/* The hero numeral keeps its size — it is the one thing read from the back of
+   the room. Only the box around it gives way. */
+.pp-shell__left .pp-stat,
+.pp-shell__right .pp-stat {
+  padding: var(--pp-space-2) var(--pp-space-3);
+}
+.pp-shell__left .pp-panel__footnote,
+.pp-shell__right .pp-panel__footnote {
+  padding: var(--pp-space-2) var(--pp-space-4);
+}
+.pp-shell__left .pp-rank__item,
+.pp-shell__right .pp-rank__item {
+  padding: 1px var(--pp-space-1);
+}
+.pp-shell__left .pp-rank,
+.pp-shell__right .pp-rank {
+  margin-bottom: var(--pp-space-1);
+}
+.pp-shell__left .pp-rank__head,
+.pp-shell__right .pp-rank__head {
+  margin-top: var(--pp-space-1);
+}
+
+/* The counts list is the longest fixed block in either rail — five rows that
+   cannot be cut, because cannot_type leading them is the admission-before-
+   finding order. So the spacing between them gives way instead of the rows. */
+.pp-shell__left .pp-dxlist,
+.pp-shell__right .pp-dxlist {
+  margin-bottom: var(--pp-space-2);
+}
+.pp-shell__left .pp-dxlist--counts,
+.pp-shell__right .pp-dxlist--counts {
+  gap: 2px;
+}
+
+/* The selection card is the densest thing in the product — six evidence rows
+   that are a requirement, not a preference, so they cannot be cut. Two pairs to
+   a row instead of one halves the block without losing a single figure: all six
+   of obs/exp, Δ, z, baseline_n, hours_reported and reporting_rate stay on the
+   card and stay readable. */
+.pp-shell__right .pp-kv {
+  margin: var(--pp-space-2) 0;
+  grid-template-columns: auto auto auto 1fr;
+  column-gap: var(--pp-space-2);
+}
+/* A wrapped label costs exactly the row it was meant to save. */
+.pp-shell__right .pp-kv dt,
+.pp-shell__right .pp-kv dd {
+  white-space: nowrap;
+}
+
+/* Street names here run to "Oriental Parade path/cycle Ln right hand side",
+   which took three lines at display size and pushed the evidence off the rail. */
+.pp-shell__right .pp-panel__title {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+.pp-shell__right .pp-modes {
+  margin: var(--pp-space-1) 0;
+  gap: 1px;
+}
+/* A line can carry four usable modes, and at body size that block alone was
+   99px of a 480px rail. It is a breakdown, not a headline — caption size. */
+.pp-shell__right .pp-modes__row,
+.pp-shell__right .pp-modes__row > * {
+  line-height: 1.25;
+  font-size: var(--pp-type-caption-size);
+}
+.pp-shell__right .pp-dx {
+  gap: var(--pp-space-1);
+}
+.pp-shell__right .pp-panel__footnote {
+  padding: var(--pp-space-1) var(--pp-space-4);
+}
+
+/* The clear button was competing with the title for a 360px head and forcing
+   every long street name onto a second line. */
+.pp-shell__right .pp-panel__titles {
+  flex: 1;
+  min-width: 0;
+}
+.pp-situ__day {
+  margin-top: var(--pp-space-2);
+}
+
+/* ------------------------------------------------------------ landing modal */
+.pp-landing__eyebrow {
+  margin: 0 0 var(--pp-space-3);
+}
+.pp-landing__title {
+  margin: 0 0 var(--pp-space-4);
+  font-family: var(--pp-font-serif);
+  font-size: var(--pp-type-display-size);
+  line-height: var(--pp-type-display-lh);
+  font-weight: var(--pp-type-display-weight);
+  letter-spacing: var(--pp-type-display-tracking);
+  color: rgb(var(--pp-color-text-primary));
+  text-wrap: balance;
+}
+.pp-landing__lede {
+  margin: 0 0 var(--pp-space-5);
+  color: rgb(var(--pp-color-text-secondary));
+  max-width: 56ch;
+}
+.pp-landing__section {
+  margin-bottom: var(--pp-space-4);
+}
+.pp-landing__section h2 {
+  margin: 0 0 var(--pp-space-2);
+}
+.pp-landing__list {
+  margin: 0;
+  padding-left: var(--pp-space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  color: rgb(var(--pp-color-text-secondary));
+  max-width: 64ch;
+}
+.pp-landing__details {
+  border-top: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  padding: var(--pp-space-3) 0;
+}
+.pp-landing__details > summary {
+  cursor: pointer;
+  font: var(--pp-type-label-weight) var(--pp-type-label-size) / var(--pp-type-label-lh)
+    var(--pp-font-sans);
+  letter-spacing: var(--pp-type-label-tracking);
+  text-transform: uppercase;
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-landing__details > p {
+  margin: var(--pp-space-3) 0 0;
+  max-width: 64ch;
+}
+.pp-landing__details > ul {
+  margin-top: var(--pp-space-3);
+}
+/* Pinned beside the CTA, so the two required statements survive the crop that
+   the first screen always gets. Both were below the fold. */
+.pp-landing__pin {
+  font-weight: 600;
+  color: rgb(var(--pp-color-status-alert));
+}
+.pp-landing__ctanote {
+  order: 9;
+  flex-basis: 100%;
+}
+.pp-landing__emergency {
+  margin: var(--pp-space-4) 0 0;
+  padding-top: var(--pp-space-3);
+  border-top: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  color: rgb(var(--pp-color-text-muted));
+}

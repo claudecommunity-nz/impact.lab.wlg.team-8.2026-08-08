@@ -1,0 +1,206 @@
+/* Bands A and B. NO COLOUR LITERALS — every colour is rgb(var(--pp-color-*)). */
+
+/* =================================================================== *
+ * Band A — identity bar. Opaque, not glass: it has to stay legible over
+ * whatever the map is doing underneath, and it is the one surface where
+ * the institutional accent carries weight.
+ *
+ * chrome-bar is its own token because no existing one is dark on all
+ * three palettes — sem-pulse-healthy is [168,216,206] pale mint on
+ * Nightwatch, so filling the bar with the accent inverts the reading.
+ * =================================================================== */
+.pp-bar {
+  position: absolute;
+  z-index: 12;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--pp-space-7);
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-5);
+  padding: 0 var(--pp-space-4);
+  background: rgb(var(--pp-color-chrome-bar));
+  color: rgb(var(--pp-color-chrome-bar-ink));
+}
+
+.pp-bar__mark {
+  flex: none;
+  font-family: var(--pp-font-serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  line-height: 1;
+  color: rgb(var(--pp-color-chrome-bar-ink));
+}
+
+/* Underline, not a pill. Pills are the control row's vocabulary and the two
+   rows must not rhyme. */
+.pp-bar__tabs {
+  display: flex;
+  align-self: stretch;
+  gap: var(--pp-space-4);
+}
+.pp-bar__tab {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--pp-space-1);
+  border-bottom: 2px solid transparent;
+  color: rgb(var(--pp-color-chrome-bar-ink));
+  opacity: 0.62;
+  text-decoration: none;
+  transition: opacity var(--pp-motion-fast) var(--pp-ease-standard);
+}
+.pp-bar__tab:hover {
+  opacity: 0.85;
+}
+.pp-bar__tab[data-active='true'] {
+  opacity: 1;
+  border-bottom-color: rgb(var(--pp-color-chrome-bar-ink));
+}
+
+/* The permanent honesty flag. Part of the opaque bar, so it survives
+   presentation mode, survives a screenshot, and cannot scroll away. */
+.pp-bar__flag {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--pp-space-2);
+  white-space: nowrap;
+  color: rgb(var(--pp-color-chrome-bar-ink) / 0.78);
+}
+.pp-bar__flag strong {
+  letter-spacing: 0.08em;
+  color: rgb(var(--pp-color-chrome-bar-ink));
+}
+.pp-bar__sep {
+  opacity: 0.45;
+}
+
+.pp-bar__help.pp-btn {
+  flex: none;
+  color: rgb(var(--pp-color-chrome-bar-ink));
+  border-color: rgb(var(--pp-color-chrome-bar-ink) / 0.3);
+}
+.pp-bar__help.pp-btn:hover {
+  background: rgb(var(--pp-color-chrome-bar-ink) / 0.14);
+  border-color: rgb(var(--pp-color-chrome-bar-ink) / 0.5);
+}
+
+/* =================================================================== *
+ * Band B — control row. Everything here was a card in a rail: 1452px of
+ * rail reclaimed, and the controls are where the eye already is.
+ * =================================================================== */
+.pp-controls {
+  position: absolute;
+  z-index: 12;
+  top: var(--pp-space-7);
+  left: 0;
+  right: 0;
+  height: var(--pp-space-7);
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-3);
+  padding: 0 var(--pp-space-4);
+  background: rgb(var(--pp-color-surface-1));
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  /* the safety valve at narrow widths — the row never wraps into band C */
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pp-controls::-webkit-scrollbar {
+  display: none;
+}
+.pp-controls__rule {
+  flex: none;
+  align-self: center;
+  width: 1px;
+  height: 20px;
+  background: rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-controls__spacer {
+  flex: 1 1 auto;
+}
+
+.pp-pills {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-1);
+  flex: none;
+}
+.pp-pill {
+  gap: var(--pp-space-2);
+  white-space: nowrap;
+}
+.pp-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.pp-pill__key {
+  font-size: 0.6875rem;
+  opacity: 0.5;
+}
+.pp-pill__date {
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-pill__delta {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-pill__delta[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-pill__delta[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+/* A day we declined to assess is still selectable — picking one is the point
+   of the demo, not a debug flag — so it is badged, never disabled. */
+.pp-pill__delta[data-null='true'] {
+  color: rgb(var(--pp-color-sem-suppressed));
+}
+.pp-pill--day[data-verdict='refused'] {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(var(--pp-color-sem-suppressed) / 0.14) 0 2px,
+    transparent 2px 9px
+  );
+}
+/* The role badge collapsed to a dot: at chip scale "the event" doubled the
+   width of every pill to say what the delta already says. */
+.pp-pill__dot {
+  flex: none;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--pp-radius-pill);
+  background: rgb(var(--pp-color-text-muted));
+}
+.pp-pill__dot[data-role='event'] {
+  background: rgb(var(--pp-color-status-alert));
+}
+.pp-pill__dot[data-role='refusal'] {
+  background: rgb(var(--pp-color-status-provisional));
+}
+.pp-pill__dot[data-role='healthy'] {
+  background: rgb(var(--pp-color-sem-pulse-healthy));
+}
+
+/* --- the Context popover ---------------------------------------------- */
+.pp-pop {
+  position: relative;
+  flex: none;
+}
+.pp-pop__panel {
+  position: absolute;
+  z-index: 13;
+  top: calc(100% + var(--pp-space-2));
+  right: 0;
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-4);
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+  border-radius: var(--pp-radius-panel);
+  box-shadow: var(--pp-elev-3);
+  white-space: normal;
+}

@@ -1,0 +1,482 @@
+/*
+ * Streets. One grid, shared by the sticky header, the site rows and the child
+ * rows — child traces have to sit in the SAME column as their parent's, because
+ * comparing two directions of one street is the entire reason a site has
+ * members.
+ *
+ * NO COLOUR LITERALS. Every colour is rgb(var(--pp-color-*)).
+ *
+ * Column geometry lives in three custom properties so the hour ruler, the
+ * warning band and the playback cursor can be positioned across the whole table
+ * without measuring anything at runtime:
+ *   --pp-st-cols   the grid
+ *   --pp-st-left   everything left of the trace column, including gaps
+ *   --pp-st-right  everything right of it
+ * At 1512px the trace column resolves to 596px, or 25.9px per hour.
+ */
+
+.pp-streets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  height: 100%;
+  min-height: 0;
+  padding: var(--pp-space-5);
+  background: rgb(var(--pp-color-bg-base));
+  color: rgb(var(--pp-color-text-primary));
+
+  --pp-st-cols: 28px 36px 296px 1fr 92px 176px 68px 60px;
+  --pp-st-left: 408px;
+  --pp-st-right: 460px;
+  --pp-st-gap: var(--pp-space-4);
+}
+
+.pp-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.pp-streets__honesty {
+  color: rgb(var(--pp-color-text-secondary));
+  border-left: 3px solid rgb(var(--pp-color-status-warn));
+  padding-left: var(--pp-space-3);
+}
+
+.pp-streets__empty {
+  padding: var(--pp-space-6);
+}
+
+/* ---------------------------------------------------------------- controls */
+
+.pp-streets__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--pp-space-3);
+}
+
+.pp-streets__search {
+  display: block;
+}
+.pp-streets__input {
+  width: 240px;
+  padding: var(--pp-space-2) var(--pp-space-3);
+  background: rgb(var(--pp-color-surface-1));
+  color: rgb(var(--pp-color-text-primary));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+  border-radius: var(--pp-radius-md);
+}
+
+.pp-streets__chips,
+.pp-streets__seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pp-space-1);
+}
+
+.pp-streets__chip {
+  padding: 1px var(--pp-space-2);
+  text-transform: none;
+  letter-spacing: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.pp-streets__chip[data-on='true'] {
+  background: rgb(var(--pp-color-surface-3));
+}
+
+.pp-streets__cbd {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+.pp-streets__seg--sort {
+  margin-left: auto;
+}
+
+.pp-streets__status {
+  min-height: 1.2em;
+}
+
+/* ------------------------------------------------------------------ table */
+
+.pp-streets__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-panel);
+  background: rgb(var(--pp-color-surface-1));
+}
+
+/* The overlay's containing block: it must grow to the full scroll height so
+   the cursor is a line down the whole day, not just the visible rows. */
+.pp-streets__inner {
+  position: relative;
+  min-width: 720px;
+}
+
+.pp-st {
+  display: block;
+  width: 100%;
+  border-collapse: collapse;
+}
+.pp-st thead,
+.pp-st tbody {
+  display: block;
+}
+.pp-st thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgb(var(--pp-color-surface-2));
+  box-shadow: 0 1px 0 rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+}
+
+.pp-st__row {
+  display: grid;
+  grid-template-columns: var(--pp-st-cols);
+  gap: var(--pp-st-gap);
+  align-items: center;
+  height: 44px;
+  padding: 0 0;
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / 0.08);
+}
+.pp-st__row > * {
+  min-width: 0;
+  overflow: hidden;
+  text-align: left;
+}
+
+.pp-st__head {
+  height: 52px;
+  border-bottom: 0;
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+tbody .pp-st__row {
+  cursor: pointer;
+}
+tbody .pp-st__row:hover {
+  background: rgb(var(--pp-color-surface-2));
+}
+tbody .pp-st__row[data-current='true'],
+tbody .pp-st__row[data-selected='true'] {
+  background: rgb(var(--pp-color-status-info) / 0.1);
+  box-shadow: inset 2px 0 0 rgb(var(--pp-color-status-info));
+}
+tbody .pp-st__row:focus-visible {
+  outline: 2px solid rgb(var(--pp-color-status-info));
+  outline-offset: -2px;
+}
+
+/* --- cells ----------------------------------------------------------- */
+
+.pp-st__c-disclose {
+  display: flex;
+  justify-content: center;
+  padding-left: var(--pp-space-2);
+}
+.pp-st__c-cov {
+  padding-right: var(--pp-space-2);
+}
+.pp-st__chev {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: rgb(var(--pp-color-text-muted));
+  cursor: pointer;
+  transition: transform var(--pp-motion-fast) var(--pp-ease-standard);
+}
+.pp-st__chev[data-open='false'] {
+  transform: rotate(-90deg);
+}
+
+.pp-st__c-rank {
+  text-align: right;
+}
+
+.pp-st__c-name {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.pp-st__c-trace {
+  position: relative;
+  overflow: visible;
+}
+
+.pp-st__c-delta {
+  text-align: right;
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-st__c-delta[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-st__c-delta[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+/* Under ~20/hr the number is arithmetic about a tiny denominator. It still
+   shows; it just stops claiming to be a signal. */
+.pp-st__c-delta[data-flat='true'] {
+  color: rgb(var(--pp-color-sem-neutral-zero));
+}
+.pp-st__c-delta[data-words='true'] {
+  color: rgb(var(--pp-color-sem-unknown));
+  font-size: var(--pp-type-caption-size);
+}
+
+/* 176px will not hold "Consistent with an exposure hazard" in uppercase label
+   type, and a two-line chip breaks the 44px row. Sentence case, no tracking. */
+.pp-st__c-dx .pp-dx {
+  max-width: 100%;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: var(--pp-type-caption-size);
+}
+
+.pp-st__c-lines {
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+.pp-st__c-cov {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-st__c-cov[data-partial='true'] {
+  color: rgb(var(--pp-color-sem-suppressed));
+}
+
+/* --- child rows ------------------------------------------------------ */
+
+.pp-st__row--child {
+  height: 36px;
+  background: rgb(var(--pp-color-surface-2) / 0.5);
+}
+.pp-st__c-indent {
+  grid-column: 1 / 3;
+}
+.pp-st__row--child .pp-st__c-name {
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+.pp-st__row--notes {
+  height: auto;
+  display: block;
+  padding: var(--pp-space-2) 0 var(--pp-space-3) var(--pp-st-left);
+  background: rgb(var(--pp-color-surface-2) / 0.5);
+  cursor: default;
+}
+.pp-st__notes p {
+  margin: 0 0 var(--pp-space-1);
+  padding-right: var(--pp-space-5);
+}
+
+/* --- section header (Not scored) ------------------------------------- */
+
+.pp-st__section {
+  display: block;
+  height: auto;
+  padding: var(--pp-space-3) var(--pp-space-4);
+  background: rgb(var(--pp-color-surface-2));
+  cursor: default;
+}
+.pp-st__section-cell {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--pp-space-3);
+}
+
+/* --- ruler ----------------------------------------------------------- */
+
+.pp-st__ruler {
+  position: relative;
+  height: 32px;
+}
+.pp-st__tick {
+  position: absolute;
+  bottom: 0;
+  transform: translateX(-50%);
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-st__tick::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  width: 1px;
+  height: 4px;
+  background: rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+}
+/* The warning window, named and provenanced where it is drawn. The tool never
+   says the warning caused the drop; it puts them in the same column. */
+.pp-st__warn {
+  position: absolute;
+  top: 0;
+  bottom: 14px;
+  background: rgb(var(--pp-color-status-warn) / 0.16);
+  border-inline: 1px solid rgb(var(--pp-color-status-warn) / 0.5);
+}
+.pp-st__warn-label {
+  position: absolute;
+  inset-inline: 0;
+  top: 1px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+/* --- overlay: one band and one cursor for 123 rows -------------------- */
+
+.pp-st__overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.pp-st__overlay-band,
+.pp-st__overlay-cursor {
+  position: absolute;
+  top: 52px; /* below the sticky header row */
+  bottom: 0;
+  left: calc(var(--pp-st-left) + var(--pp-st-f) * (100% - var(--pp-st-left) - var(--pp-st-right)));
+}
+.pp-st__overlay-band {
+  width: calc(var(--pp-st-w) * (100% - var(--pp-st-left) - var(--pp-st-right)));
+  background: rgb(var(--pp-color-status-warn) / 0.07);
+}
+.pp-st__overlay-cursor {
+  width: 1px;
+  background: rgb(var(--pp-color-text-primary) / 0.45);
+}
+
+/* The row's real height. VitalsTrace draws into a 64-unit viewBox (see
+   TRACE_VIEW) because its 10px padding is fixed whatever height it is handed;
+   compressing the box here keeps the padding proportional, so the day fills
+   the row instead of a hairline through the middle of it. */
+.pp-st__c-trace .pp-trace {
+  height: 30px;
+}
+.pp-st__row--child .pp-st__c-trace .pp-trace {
+  height: 22px;
+}
+
+/* --- VitalsTrace at row scale ---------------------------------------- *
+ *
+ * VitalsTrace has no `grid`/`density` props yet — that change lives in the
+ * ui/ workstream — so the row scale is imposed from here. Hiding the 25 hour
+ * lines removes the paint but not the ~3,000 nodes they cost across 123 rows;
+ * when the props land, pass grid={false} and delete the first rule.
+ * The axis is drawn once, in the sticky header, which is why it can go.
+ */
+.pp-streets .pp-trace__grid {
+  display: none;
+}
+.pp-streets .pp-trace {
+  background: none;
+  border-bottom: 0;
+}
+/* Vertical compression squashes the stroke with everything else, so the
+   weights are set against the compressed box, not the viewBox. */
+.pp-streets .pp-trace__actual {
+  stroke-width: 3.4;
+}
+.pp-streets .pp-trace__ghost {
+  stroke-width: 2.4;
+}
+/* 0.55 reads as an erasure block at 28px. */
+.pp-streets .pp-trace__gap {
+  fill: rgb(var(--pp-color-sem-offline) / 0.3);
+}
+/* On a refused day the shortfall is still drawn — the cut trace IS the point —
+   but it is not allowed to wear the emergency colour. We said we would not call
+   this day; a red area is a call. */
+.pp-streets[data-refused='true'] .pp-trace__deficit-area {
+  fill: rgb(var(--pp-color-sem-suppressed) / 0.22);
+}
+.pp-streets[data-refused='true'] .pp-trace__actual--deficit {
+  stroke: rgb(var(--pp-color-sem-suppressed));
+}
+
+/* No baseline means there is nothing to draw a ghost from. A flat line along
+   the floor would read as "expected nothing", which is a different claim. */
+.pp-st__row[data-no-baseline='true'] .pp-trace__ghost {
+  display: none;
+}
+
+/* --------------------------------------------------------------- legend */
+
+.pp-streets__legend > summary {
+  cursor: pointer;
+  padding: var(--pp-space-2) 0;
+}
+.pp-streets__legend-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  max-width: 90ch;
+}
+.pp-streets__legend-body p {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------ responsive */
+
+@media (max-width: 1279px) {
+  .pp-streets {
+    --pp-st-cols: 28px 296px 1fr 92px 176px 68px 60px;
+    --pp-st-left: 356px;
+  }
+  .pp-st__c-rank {
+    display: none;
+  }
+  .pp-st__c-indent {
+    grid-column: 1 / 2;
+  }
+}
+
+@media (max-width: 1099px) {
+  .pp-streets {
+    --pp-st-cols: 28px 296px 1fr 92px 44px 68px 60px;
+    --pp-st-right: 328px;
+  }
+  /* chip collapses to its glyph; the label survives in the glyph's aria-label */
+  .pp-st__c-dx .pp-dx {
+    padding: 2px;
+    border-radius: var(--pp-radius-sm);
+  }
+  .pp-st__c-dx .pp-dx > span:not(.pp-dx__conf) {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .pp-streets {
+    --pp-st-cols: 28px 200px minmax(240px, 1fr) 84px 44px 60px 56px;
+    --pp-st-left: 260px;
+    --pp-st-right: 308px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp-st__chev {
+    transition: none;
+  }
+}
+
+.pp-st__notes {
+  display: block;
+}

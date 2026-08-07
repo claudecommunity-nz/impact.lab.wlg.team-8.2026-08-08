@@ -1,0 +1,601 @@
+/*
+ * The eight primitives. Chrome is graphite and hairlines; the map is the only
+ * lit object in the room. If a panel is competing with the map, the panel is wrong.
+ *
+ * NO COLOUR LITERALS — every colour resolves through rgb(var(--pp-color-*)).
+ */
+
+/* ------------------------------------------------------------------ Panel */
+.pp-panel {
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-panel);
+  box-shadow:
+    inset 0 1px 0 rgb(var(--pp-color-text-primary) / 0.05),
+    var(--pp-elev-2);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pp-panel[data-tone='warn'] {
+  border-color: rgb(var(--pp-color-status-warn) / 0.35);
+}
+.pp-panel[data-tone='blind'] {
+  border-color: rgb(var(--pp-color-sem-suppressed) / 0.45);
+  background: rgb(var(--pp-color-surface-1));
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(var(--pp-color-sem-suppressed) / 0.16) 0 2px,
+    transparent 2px 9px
+  );
+}
+.pp-panel__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pp-space-3);
+  padding: var(--pp-space-5) var(--pp-space-5) var(--pp-space-3);
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  width: 100%;
+  cursor: default;
+  font: inherit;
+}
+.pp-panel__head[data-collapsible='true'] {
+  cursor: pointer;
+}
+.pp-panel__titles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  flex: 1;
+  min-width: 0;
+}
+.pp-panel__title {
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-panel__subtitle {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-panel__chevron {
+  color: rgb(var(--pp-color-text-muted));
+  transition: transform var(--pp-motion-fast) var(--pp-ease-standard);
+}
+.pp-panel__chevron[data-open='false'] {
+  transform: rotate(-90deg);
+}
+.pp-panel__body {
+  padding: 0 var(--pp-space-5) var(--pp-space-5);
+  min-width: 0;
+}
+.pp-panel__footnote {
+  padding: var(--pp-space-3) var(--pp-space-5);
+  border-top: 1px solid rgb(var(--pp-color-border-subtle) / 0.07);
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+/* --------------------------------------------------------------- StatTile */
+.pp-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  padding: var(--pp-space-3) var(--pp-space-4);
+  background: rgb(var(--pp-color-surface-2));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-md);
+  min-width: 0;
+}
+.pp-stat__label {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-stat__value {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pp-space-2);
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-stat[data-state='suppressed'] .pp-stat__value,
+.pp-stat[data-state='unknown'] .pp-stat__value {
+  color: rgb(var(--pp-color-sem-suppressed));
+}
+.pp-stat__unit {
+  color: rgb(var(--pp-color-text-muted));
+  font-size: var(--pp-type-caption-size);
+}
+.pp-stat__delta[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-stat__delta[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-stat__basis {
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+/* ----------------------------------------------------------------- Legend */
+.pp-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-3);
+}
+.pp-legend__title {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-legend__ramp {
+  display: flex;
+  height: 10px;
+  border-radius: var(--pp-radius-sm);
+  overflow: hidden;
+}
+.pp-legend__ramp-cell {
+  flex: 1;
+}
+.pp-legend__ramp-labels {
+  display: flex;
+  justify-content: space-between;
+  color: rgb(var(--pp-color-text-muted));
+  font-size: var(--pp-type-caption-size);
+}
+.pp-legend__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pp-legend__item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--pp-space-3);
+}
+.pp-legend__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--pp-radius-sm);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+  flex: none;
+  margin-top: 2px;
+}
+/* offline is cool grey and hatched; observed-zero is a warm-olive solid
+   hairline. The data trap made visible — they must never render alike. */
+.pp-legend__swatch[data-hatched='true'] {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(var(--pp-color-bg-void) / 0.9) 0 1px,
+    transparent 1px 4px
+  );
+}
+.pp-legend__note {
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+/* --------------------------------------------------------------- Scrubber */
+.pp-scrub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  width: 100%;
+}
+.pp-scrub__track-wrap {
+  position: relative;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+.pp-scrub__track {
+  position: absolute;
+  inset-inline: 0;
+  height: 6px;
+  background: rgb(var(--pp-color-surface-3));
+  border-radius: var(--pp-radius-sm);
+  overflow: hidden;
+}
+.pp-scrub__fill {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  background: rgb(var(--pp-color-sem-pulse-healthy) / 0.55);
+}
+/* hatched spans = hours the feed never delivered. Visible before you play. */
+.pp-scrub__gap {
+  position: absolute;
+  inset-block: 0;
+  background: rgb(var(--pp-color-sem-offline));
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(var(--pp-color-sem-suppressed) / 0.5) 0 2px,
+    transparent 2px 9px
+  );
+}
+.pp-scrub__mark {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  transform: translateX(-1px);
+}
+.pp-scrub__mark-label {
+  position: absolute;
+  top: 100%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: rgb(var(--pp-color-text-muted));
+  font-size: var(--pp-type-caption-size);
+}
+.pp-scrub__input {
+  position: relative;
+  width: 100%;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  height: 28px;
+}
+.pp-scrub__input::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 22px;
+  border-radius: var(--pp-radius-sm);
+  background: rgb(var(--pp-color-text-primary));
+  border: 1px solid rgb(var(--pp-color-bg-void));
+  cursor: ew-resize;
+}
+.pp-scrub__input::-moz-range-thumb {
+  width: 12px;
+  height: 22px;
+  border-radius: var(--pp-radius-sm);
+  background: rgb(var(--pp-color-text-primary));
+  border: 1px solid rgb(var(--pp-color-bg-void));
+  cursor: ew-resize;
+}
+.pp-scrub__readout {
+  display: flex;
+  justify-content: space-between;
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+/* ----------------------------------------------------------------- Toggle */
+.pp-toggle {
+  display: flex;
+  gap: var(--pp-space-3);
+  align-items: flex-start;
+  cursor: pointer;
+  padding: var(--pp-space-1) 0;
+}
+.pp-toggle[data-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.pp-toggle__switch {
+  flex: none;
+  position: relative;
+  width: 34px;
+  height: 18px;
+  margin-top: 2px;
+  border-radius: var(--pp-radius-pill);
+  background: rgb(var(--pp-color-surface-3));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  transition: background var(--pp-motion-fast) var(--pp-ease-standard);
+}
+.pp-toggle__switch[data-checked='true'] {
+  background: rgb(var(--pp-color-status-ok) / 0.55);
+}
+.pp-toggle__knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--pp-radius-pill);
+  background: rgb(var(--pp-color-text-primary));
+  transition: transform var(--pp-motion-fast) var(--pp-ease-standard);
+}
+.pp-toggle__switch[data-checked='true'] .pp-toggle__knob {
+  transform: translateX(16px);
+}
+.pp-toggle__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pp-toggle__label {
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-toggle__hint {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-toggle__input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.pp-toggle__input:focus-visible + .pp-toggle__switch {
+  outline: 2px solid rgb(var(--pp-color-status-info));
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- Callout */
+.pp-callout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-4) var(--pp-space-5);
+  background: rgb(var(--pp-color-surface-2));
+  border-radius: var(--pp-radius-md);
+  border-left: 4px solid rgb(var(--pp-color-status-info));
+}
+.pp-callout[data-intent='limitation'] {
+  border-left-color: rgb(var(--pp-color-status-warn));
+}
+.pp-callout[data-intent='refusal'] {
+  border-left-color: rgb(var(--pp-color-status-provisional));
+  box-shadow: var(--pp-elev-3);
+}
+.pp-callout__title {
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-callout__body {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-callout__persist {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+/* ---------------------------------------------------------- DiagnosisChip */
+.pp-dx {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-1) var(--pp-space-3);
+  border-radius: var(--pp-radius-pill);
+  background: rgb(var(--pp-color-surface-2));
+  border: 1px solid rgb(var(--pp-color-dx-cannot-type) / 0.4);
+  color: rgb(var(--pp-color-text-primary));
+  font: var(--pp-type-label-weight) var(--pp-type-label-size) / var(--pp-type-label-lh)
+    var(--pp-font-sans);
+  letter-spacing: var(--pp-type-label-tracking);
+  text-transform: uppercase;
+  cursor: default;
+}
+button.pp-dx {
+  cursor: pointer;
+}
+.pp-dx__conf {
+  color: rgb(var(--pp-color-text-muted));
+  font-family: var(--pp-font-mono);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* ------------------------------------------------------------ VitalsTrace */
+.pp-trace {
+  display: block;
+  width: 100%;
+  background: rgb(var(--pp-color-surface-1));
+  border-bottom: 2px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-trace__grid {
+  stroke: rgb(var(--pp-color-border-subtle) / 0.05);
+  stroke-width: 1;
+}
+.pp-trace__grid--major {
+  stroke: rgb(var(--pp-color-border-subtle) / 0.09);
+}
+.pp-trace__band {
+  fill: rgb(var(--pp-color-sem-ghost) / 0.14);
+}
+/* Solid, and the brightest of the reference marks. Dashed-and-dim made the
+   ghost the thinnest line in the frame — you had to hunt for the very thing
+   the panel exists to show. */
+.pp-trace__ghost {
+  fill: none;
+  stroke: rgb(var(--pp-color-sem-ghost-core));
+  stroke-width: 2;
+}
+/* The gap between expected and actual, with area. This is the emergency. */
+.pp-trace__deficit-area {
+  fill: rgb(var(--pp-color-sem-deficit) / 0.35);
+  stroke: none;
+}
+.pp-trace__actual {
+  fill: none;
+  stroke: rgb(var(--pp-color-sem-pulse-healthy));
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.pp-trace__actual--deficit {
+  stroke: rgb(var(--pp-color-sem-deficit));
+}
+.pp-trace__cursor {
+  stroke: rgb(var(--pp-color-text-primary));
+  stroke-width: 1;
+}
+.pp-trace__dot {
+  fill: rgb(var(--pp-color-sem-pulse-healthy-core));
+}
+.pp-trace__gap {
+  fill: rgb(var(--pp-color-sem-offline) / 0.55);
+}
+
+/* ------------------------------------------------------------------ misc */
+.pp-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-4);
+}
+.pp-row {
+  display: flex;
+  gap: var(--pp-space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.pp-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--pp-space-3);
+}
+
+/* =================================================================== *
+ * Glass — the shared recipe for anything floating over the instrument.
+ * Was inlined in map.css for the readout; promoted here because the
+ * portal chrome and the modal both need it.
+ * =================================================================== */
+.pp-glass {
+  background: rgb(var(--pp-color-surface-scrim) / var(--pp-alpha-scrim));
+  backdrop-filter: blur(14px) saturate(1.05);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-panel);
+  box-shadow: var(--pp-elev-2);
+}
+
+/* =================================================================== *
+ * Button
+ * =================================================================== */
+.pp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-2) var(--pp-space-3);
+  background: rgb(var(--pp-color-surface-1));
+  color: rgb(var(--pp-color-text-primary));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-md);
+  font: var(--pp-type-label-weight) var(--pp-type-label-size) / var(--pp-type-label-lh)
+    var(--pp-font-sans);
+  letter-spacing: var(--pp-type-label-tracking);
+  cursor: pointer;
+  transition:
+    background var(--pp-motion-fast) var(--pp-ease-standard),
+    border-color var(--pp-motion-fast) var(--pp-ease-standard);
+}
+.pp-btn:hover {
+  background: rgb(var(--pp-color-surface-2));
+  border-color: rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+}
+
+/* Primary is filled with the institutional accent — the one place the deep
+   forest is allowed to carry weight rather than sit as a hairline. */
+.pp-btn--primary {
+  background: rgb(var(--pp-color-sem-pulse-healthy));
+  color: rgb(var(--pp-color-text-inverse));
+  border-color: rgb(var(--pp-color-sem-pulse-healthy));
+}
+.pp-btn--primary:hover {
+  background: rgb(var(--pp-color-sem-pulse-healthy-core));
+  border-color: rgb(var(--pp-color-sem-pulse-healthy-core));
+}
+
+.pp-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+.pp-btn--ghost:hover {
+  background: rgb(var(--pp-color-surface-2));
+  border-color: rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+
+.pp-btn--chip {
+  padding: 2px var(--pp-space-2);
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--pp-font-mono);
+}
+.pp-btn--icon {
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--pp-radius-pill);
+}
+.pp-btn--chip[data-active='true'],
+.pp-btn[data-active='true'] {
+  background: rgb(var(--pp-color-surface-3));
+  border-color: rgb(var(--pp-color-sem-pulse-healthy) / 0.7);
+}
+
+/* =================================================================== *
+ * Modal
+ * =================================================================== */
+.pp-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--pp-space-5);
+  background: rgb(var(--pp-color-bg-void) / 0.42);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: pp-fade var(--pp-motion-base) var(--pp-ease-enter);
+}
+/* The BODY scrolls, not the panel. When the panel scrolled as one piece the
+   landing explainer overflowed 88dvh at 1512x900 and pushed "Show me 23 October
+   2025" to y=914 — the primary call to action, 14px below the fold, on the first
+   screen anyone sees. Title and footer are now pinned and the prose scrolls
+   between them. */
+.pp-modal__panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-height: 88dvh;
+  overflow: hidden;
+  padding: var(--pp-space-6);
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-panel);
+  box-shadow: var(--pp-elev-3);
+  animation: pp-rise var(--pp-motion-base) var(--pp-ease-enter);
+}
+.pp-modal__panel:focus {
+  outline: none;
+}
+.pp-modal__title {
+  margin: 0 0 var(--pp-space-4);
+  font-family: var(--pp-font-serif);
+  font-size: var(--pp-type-h1-size);
+  line-height: var(--pp-type-h1-lh);
+  font-weight: var(--pp-type-h1-weight);
+  letter-spacing: var(--pp-type-h1-tracking);
+  color: rgb(var(--pp-color-text-primary));
+  text-wrap: balance;
+}
+.pp-modal__body {
+  flex: 1 1 auto;
+  min-height: 0; /* without this a flex item refuses to shrink below content */
+  overflow-y: auto;
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-modal__footer {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pp-space-2);
+  align-items: center;
+  margin-top: var(--pp-space-5);
+  padding-top: var(--pp-space-4);
+  border-top: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+
+@keyframes pp-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-modal,
+  .pp-modal__panel {
+    animation: none;
+  }
+}

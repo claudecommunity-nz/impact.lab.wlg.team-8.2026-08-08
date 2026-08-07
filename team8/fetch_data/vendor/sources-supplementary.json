@@ -1,0 +1,382 @@
+{
+  "_comment": "Hand-researched additions to the spreadsheet catalogue. Every entry here was verified by request on 2026-08-03. 'replaces' points at a dataset key whose spreadsheet link is an HTML page (or dead); 'extra' entries are live APIs the spreadsheet does not list at all but that matter for emergency response.",
+  "resolved": {
+    "beach-exposure": {
+      "note": "Spreadsheet links the NIWA Hub page. The queryable service behind it:",
+      "endpoint": "https://gis.niwa.co.nz/server/rest/services/COAST/NZ_Coastal_classification_Beach_exposure/MapServer",
+      "layer": 0,
+      "verified": true
+    },
+    "coastal-inundation-index": {
+      "note": "The Hub page is dead - it falls back to NIWA's generic landing page and the Hub search no longer lists the inundation index. The underlying service is still live and published: This layer also carries CSI_cc (the erosion score) alongside CSI_in, and has the same 1811 segments as coastal-erosion-index - the two catalogue rows are one dataset published twice.",
+      "endpoint": "https://gis.niwa.co.nz/server/rest/services/COAST/Coastal_Sensitivity_Index_Inundation/MapServer",
+      "layer": 0,
+      "verified": true,
+      "duplicate_of": "coastal-erosion-index"
+    },
+    "coastal-landform": {
+      "note": "Spreadsheet links the NIWA Hub page. The queryable service behind it:",
+      "endpoint": "https://gis.niwa.co.nz/server/rest/services/COAST/NZ_Coastal_classification_Coastal_landform_type/MapServer",
+      "layer": 0,
+      "verified": true
+    },
+    "coastal-erosion-index": {
+      "note": "The URL on the Hub landing page is an archived, broken on-prem Map Service (publishes zero layers, NaN extent, HTTP 500 on layer 0). The data is published separately as a hosted Feature Service under the NIWA_OpenData org, anonymous and CC-BY-4.0. NOTE: this single layer carries BOTH indices - CSI_cc is the coastal-change/erosion score and CSI_in the inundation score - so it is the same 1811-segment dataset as coastal-inundation-index, published twice. Either endpoint gives you both columns.",
+      "endpoint": "https://services3.arcgis.com/fp1tibNcN9mbExhG/arcgis/rest/services/NZ_Coastal_Sensitivity_Index_CSI_erosion/FeatureServer",
+      "layer": 0,
+      "broken_url_on_hub_page": "https://gis.niwa.co.nz/server/rest/services/COAST/NZ_Coastal_Sensitivity_Index_Erosion_NZTM/MapServer",
+      "bulk_download": {
+        "geojson": "https://hub.arcgis.com/api/download/v1/items/c894b53b102f4f9db55278f7572ca4f6/geojson?layers=0",
+        "csv": "https://hub.arcgis.com/api/download/v1/items/c894b53b102f4f9db55278f7572ca4f6/csv?layers=0"
+      },
+      "licence": "CC-BY-4.0",
+      "duplicate_of": "coastal-inundation-index",
+      "found_via": "subagent search of the ArcGIS sharing API; independently re-verified 2026-08-03",
+      "verified": true
+    },
+    "flood-exposure-map": {
+      "note": "The ArcGIS webmap item is not publicly shared. Greater Wellington does publish a Regional Flood Exposure Model as a public VECTOR TILE service, but it is TilesOnly — renderable on a map, with no feature query and no attributes you can read. Tiles I sampled over central Wellington came back empty, so coverage looks limited to flood-prone areas. For queryable regional flood extent use flood-hazard-areas.",
+      "endpoint": null,
+      "alternative_catalogue_id": "flood-hazard-areas",
+      "verified": false,
+      "vector_tiles": "https://tiles.arcgis.com/tiles/RS7BXJAO6ksvblJm/arcgis/rest/services/Regional_Flood_Exposure_Model/VectorTileServer"
+    },
+    "river-levels-viewer": {
+      "note": "The spreadsheet links a Web AppBuilder viewer. Its network calls show the real service: gauged flow sites, whose Name field matches Hilltop site names exactly (47/47), so this layer gives you the map pins and Hilltop gives you the readings.",
+      "endpoint": "https://mapping.gw.govt.nz/arcgis/rest/services/GW/River_flows_P_2023/MapServer",
+      "layer": 0,
+      "layers": {
+        "0": "Gauged Flow Sites",
+        "1": "Rivers",
+        "2": "Streams"
+      },
+      "joins_to": "gw_hilltop on the Name field",
+      "found_via": "browser network inspection, 2026-08-03",
+      "verified": true,
+      "coordinate_check": {
+        "method": "Coordinates cross-checked against two independent sources: Hilltop's own published lat/long for the same site names, and Esri's GeometryServer reprojecting the layers' raw NZTM Easting/Northing attributes.",
+        "arcgis_vs_hilltop": "47/47 flow + 2/2 rainfall sites matched by name; median 0.4 m, 46/47 within 10 m",
+        "reprojection_check": "12 sites reprojected independently from NZTM; max disagreement 0.59 m",
+        "outlier": "'Waikanae River at Water Treatment Plant' - ArcGIS and Hilltop disagree by 228 m. Every other site agrees within 10 m, so this looks like one stale record rather than a systemic problem. Prefer the Hilltop coordinate, or treat that gauge's position as approximate.",
+        "checked_on": "2026-08-03"
+      }
+    },
+    "rainfall-observations": {
+      "note": "The spreadsheet links one hard-coded Berhampore graph. The viewer actually loads a Rainfall map service. Layer 1 is time-filtered and is often empty; layer 2 carries the sites reporting rain in the last 6 hours. Names match Hilltop site names exactly, so join on Name for the values.",
+      "endpoint": "https://mapping.gw.govt.nz/arcgis/rest/services/Rainfall/MapServer",
+      "layer": 2,
+      "layers": {
+        "0": "Rainfall sites - no rainfall in last 6 hours",
+        "1": "Rainfall sites - latest readings",
+        "2": "Rainfall sites - last 6 hours total"
+      },
+      "joins_to": "gw_hilltop on the Name field",
+      "found_via": "browser network inspection, 2026-08-03",
+      "verified": true,
+      "coordinate_check": {
+        "method": "Coordinates cross-checked against two independent sources: Hilltop's own published lat/long for the same site names, and Esri's GeometryServer reprojecting the layers' raw NZTM Easting/Northing attributes.",
+        "arcgis_vs_hilltop": "47/47 flow + 2/2 rainfall sites matched by name; median 0.4 m, 46/47 within 10 m",
+        "reprojection_check": "12 sites reprojected independently from NZTM; max disagreement 0.59 m",
+        "outlier": "'Waikanae River at Water Treatment Plant' - ArcGIS and Hilltop disagree by 228 m. Every other site agrees within 10 m, so this looks like one stale record rather than a systemic problem. Prefer the Hilltop coordinate, or treat that gauge's position as approximate.",
+        "checked_on": "2026-08-03"
+      }
+    },
+    "riskscape-coastal": {
+      "note": "This spreadsheet row is a service description, not a dataset - the title is copied from NIWA's consultancy page and the 'PCE, 2022' attribution looks wrong (the PCE coastal work is 2015 and its NIWA exposure annex is a PDF of tables only). RiskScape is software: no public model library, sample data or API, and the RiskScape folder on gis.niwa.co.nz publishes nothing anonymously. The exposure/loss outputs are not published as data anywhere. Use extra.niwa_coastal_flood instead - the national 1% AEP coastal flood hazard layer these overlays are run against, which IS public. Note that is the hazard extent, not the exposure result. Remaining AEP scenarios and flood-depth rasters are sold on NIWA's DataHub storefront.",
+      "endpoint": null,
+      "use_instead": "extra.niwa_coastal_flood",
+      "found_via": "subagent; independently re-verified 2026-08-03",
+      "verified": false
+    },
+    "nz-searise": {
+      "note": "Reachable after all. The Takiwa portal's API is effectively public: POST /api/users/loginAsGuest with an empty body issues a 20-minute guest session to anyone, no credentials, and every endpoint the map uses accepts it. The coastal site layer - 8,173 points at ~2 km spacing, each carrying vertical land movement rate, uncertainty, observation count and quality factor - comes down as one 3.6 MB GeoJSON from two zoom-3 tiles. Per-site projections give p17/p50/p83 sea-level rise in metres at 30 year-steps from 2005 to 2300, across 5 SSP scenarios with and without VLM. There is no bulk CSV or NetCDF anywhere - not on searise.nz, not on CKAN - so this API is the only programmatic route. BETTER ROUTE: NIWA also hosts the projection lookup table openly as an ArcGIS table — SLRprojectionTable_varispacing, 173,760 rows keyed by SSP (1-5), Year (1995-2150), Base_year (1995/2005/2020) and VLM (-9 to +9 mm/yr in 0.1 steps), returning RSLR in metres. Take a site's vertical land movement rate from the coastal sites layer, round to 0.1, and look up its projection — no guest token, no 4.5-hour scrape.",
+      "endpoint": null,
+      "auth": "POST https://searise.takiwa.co/api/users/loginAsGuest (empty body). Returns sessionKey (send as X-Session-Key header) and geotilesToken (send as ?geotilesToken= query param). Both expire after 20 minutes. You must carry the response cookies AND the header - either alone fails.",
+      "sites_geojson": "https://geotiles.takiwa.co/geojson/tiles/sea_rise_national_with_vlm_sites_2024/3/{x}/{y}?options=%7B%22limit%22%3A0%7D&geotilesToken=<token> - the whole country is tiles 3/7/4 and 3/7/5",
+      "projections": "POST /api/dataset/widget/sea-level-rise/data with datasetName geodata_nz_sea_rise_national_projections_and_vlm_readings_dec_2024",
+      "join": "site ids from /api/datasetStructure/readGeodataSiteOptions join 1:1 to the GeoJSON 'name'",
+      "attribution": "NZ SeaRise / Te Tai Pari O Aotearoa (ARC, GNS Science, NIWA), 2024 revision",
+      "gotchas": "Needs a browser User-Agent (Cloudflare 403s the python-urllib default). A full national projection pull is ~140 MB and ~4.5 hours - server-side latency, not improved by parallelism - so CACHE IT, do not fetch live. A Wellington subset of 260 sites takes under 10 minutes. This is an undocumented internal API: be considerate with request rates, and expect it to change without notice.",
+      "found_via": "subagent; independently re-verified 2026-08-03 (guest login + 5,886-feature tile)",
+      "verified": true,
+      "projection_table": "https://services3.arcgis.com/fp1tibNcN9mbExhG/arcgis/rest/services/SLRprojectionTable_varispacing/FeatureServer/0"
+    },
+    "groundwater-monitoring": {
+      "note": "The ArcGIS service the viewer loads is a token-gated copy and is a red herring. The viewer's own public config points at a completely open GeoServer WFS carrying the same layer: 206 monitoring bores nationally, 22 in Greater Wellington, already in WGS84, no key or cookie needed. Measured hydrochemistry is a separate anonymous CSV export (7,828 NGMP sample rows across 47 bores, current to May 2026) - join to the WFS on bore name (WFS 'Name' = CSV 'Feature'). Only 47 of the 206 bores carry public chemistry, 10 of them in Wellington. NGMP is CC BY 4.0, a carve-out from GGW's otherwise restrictive terms; cite DOI 10.21420/9QTA-4884. This is WFS, not ArcGIS REST, so wcc_gis cannot query it - use the URL directly.",
+      "endpoint": null,
+      "wfs": "https://data.gns.cri.nz/webmaps/gns/ggw/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=ggw:NationalGroundwaterMonitoringProgramme&outputFormat=application/json",
+      "wfs_supports": "outputFormat=application/json|csv|GML, CQL_FILTER, bbox",
+      "chemistry_csv": "https://ggw.gns.cri.nz/ggwdata/export/exportCrosstabulatedAnalysisResults.csv",
+      "licence": "CC BY 4.0 (NGMP carve-out); DOI 10.21420/9QTA-4884",
+      "token_gated_red_herring": "https://gis.gns.cri.nz/server/rest/services/groundwater/hydrogeology/MapServer",
+      "caveat": "GGW's server-side filtering needs a login, so the CSV is a fixed public extract rather than a query endpoint - filter client-side after download.",
+      "found_via": "subagent; independently re-verified 2026-08-03 (206 features, 22 Wellington)",
+      "verified": true
+    },
+    "soil-classification-regional": {
+      "note": "The spreadsheet had no link at all. Greater Wellington publishes it: 4,719 soil polygons with full New Zealand Soil Classification attributes — NZSC and DOMNZSC codes, series, soil type, survey and phase. Anonymous, and outSR=4326 works. This is better than the Manaaki Whenua LRIS route, which needs an API key.",
+      "endpoint": "https://mapping1.gw.govt.nz/arcgis/rest/services/GW/The_Region_P/MapServer",
+      "layer": 45,
+      "found_via": "GWRC ArcGIS org search, 2026-08-03; verified 4,719 features",
+      "verified": true
+    },
+    "coastal-hinterland": {
+      "note": "The NIWA MapServer for this publishes zero layers. But the hinterland classification is not a separate dataset at all — it is the HINTERLAND column on the Coastal Sensitivity Index service (7 classes: ler, lpdry, lpw, rg, sca, scf, vrpa), across the same 1,811 coastline segments. Query that service and read HINTERLAND alongside SHORE_TYPE, EXPOSURE and FS.",
+      "endpoint": "https://services3.arcgis.com/fp1tibNcN9mbExhG/arcgis/rest/services/NZ_Coastal_Sensitivity_Index_CSI_erosion/FeatureServer",
+      "layer": 0,
+      "duplicate_of": "coastal-erosion-index",
+      "empty_service": "https://gis.niwa.co.nz/server/rest/services/COAST/NZ_Coastal_classification_Hinterland_characterstics/MapServer",
+      "found_via": "field inspection of the CSI service, 2026-08-03",
+      "verified": true
+    }
+  },
+  "extra": {
+    "gw_hilltop": {
+      "name": "Greater Wellington Hilltop telemetry (river level, flow, rainfall)",
+      "why": "The only genuinely real-time regional feed - 5-minute observations, current to the minute. Not in the spreadsheet, but the most useful thing for a live emergency picture.",
+      "base_url": "https://hilltop.gw.govt.nz/Telemetry.hts",
+      "protocol": "Hilltop XML",
+      "auth": "none",
+      "coordinates": "WGS84 lat/long directly - no reprojection needed",
+      "site_count": 3339,
+      "sites_with_coordinates": 2787,
+      "verified": true,
+      "gotcha": "Spaces in site names must be percent-encoded as %20. A '+' is NOT decoded server-side and returns 'No data for site'. The same server also answers on /data.hts; it is an alias, not a second dataset — both return the identical 3,340 sites and 70 measurements per site, so there is nothing extra to fetch there.",
+      "requests": {
+        "site_list": "?service=Hilltop&request=SiteList&location=LatLong",
+        "measurements_at_site": "?service=Hilltop&request=MeasurementList&Site=<site>",
+        "data": "?service=Hilltop&request=GetData&Site=<site>&Measurement=Stage&TimeInterval=PT6H"
+      }
+    },
+    "niwa_coastal_flood": {
+      "name": "NZ 1% AEP extreme sea-level flooding (NIWA, Paulik et al. 2023)",
+      "why": "Not in the spreadsheet, and the best coastal-inundation layer available: 192,377 polygons covering 21 sea-level-rise scenarios from 0 to 200 cm in 10 cm steps, filterable by region. This is the national hazard layer that coastal exposure studies are run against.",
+      "endpoint": "https://services3.arcgis.com/fp1tibNcN9mbExhG/arcgis/rest/services/CoastalFloodLayersARI100/FeatureServer/23",
+      "bay_of_plenty_is_separate": "https://services3.arcgis.com/fp1tibNcN9mbExhG/arcgis/rest/services/CoastalFloodLayersARI100_BOP/FeatureServer/25",
+      "auth": "none",
+      "licence": "CC BY-ND 4.0, NIWA 2023. Cite Paulik et al. (2023) doi:10.3389/fenvs.2022.1045743",
+      "fields": {
+        "REGC2023": "region name",
+        "ARI": "return period (100 only)",
+        "SLR": "sea-level rise in cm, 0-200 in 10 cm steps"
+      },
+      "example": "?where=REGC2023='Wellington Region' AND SLR=100&outFields=*&outSR=4326&f=geojson  → 120 polygons",
+      "verified": true,
+      "gotcha": "Do NOT use the Hub bulk download - the national GeoJSON exceeds 2 GB. Always filter with a where clause on SLR/REGC2023 plus a bounding box. Bay of Plenty is excluded from the national service and lives in its own.",
+      "found_via": "subagent; independently re-verified 2026-08-03 (192,377 features, 21 scenarios)"
+    },
+    "em_hackathon_bundle": {
+      "name": "EM Impact Labs hackathon layer bundles (WCC + GWRC)",
+      "why": "WCC published a purpose-built bundle for the hackathon itself: 24 layers (soil, wind zones, tsunami evacuation, fault traces, liquefaction, coastal and stream inundation, overland flowpaths, transport) on one FeatureServer, plus a companion GW_Layers service with 6 GWRC hazard layers. Largely overlaps the datasets already in this catalogue, but it is the officially-blessed stack in one call.",
+      "endpoint": "https://services1.arcgis.com/CPYspmTk3abe6d7i/arcgis/rest/services/EM_Hackathon_WCC_Layers/FeatureServer",
+      "companion": "https://services1.arcgis.com/CPYspmTk3abe6d7i/arcgis/rest/services/GW_Layers/FeatureServer",
+      "auth": "none",
+      "verified": true,
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "nema_cap_alerts": {
+      "name": "NEMA Emergency Mobile Alert history (CAP polygons)",
+      "why": "Every Emergency Mobile Alert broadcast in NZ — live and historic — with the actual cell-broadcast target polygon. The authoritative 'has an official alert been issued over this area' layer. 108 records at verification: NEMA tsunami alerts, FENZ stay-inside notices, regional CDEM alerts. This is the feed behind the public map on getready.govt.nz, which itself blocks scripted clients.",
+      "endpoint": "https://services5.arcgis.com/cJn6oR1QqErYBL5d/arcgis/rest/services/NZ_CAP_Alerts_(Read_only)/FeatureServer/0",
+      "auth": "none",
+      "verified": true,
+      "gotcha": "Live and historic records share the layer — filter on the 'historic' field. The same NEMA org also serves CDEM_Group_Boundaries (which CDEM group owns any point) and national tsunami-evacuation-zone vector tiles.",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "nema_electricity_outages": {
+      "name": "NEMA national electricity outages (BETA)",
+      "why": "Near-real-time power outages aggregated across 18 lines companies — including Wellington Electricity and Powerco — with customer counts, planned/unplanned flags and restoration ETAs. One call gets the national picture; 94 live outages at verification, including a live Wellington Electricity job at Makara.",
+      "endpoint": "https://services5.arcgis.com/cJn6oR1QqErYBL5d/arcgis/rest/services/electricity_outages_read_only/FeatureServer/0",
+      "auth": "none",
+      "verified": true,
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "wellington_electricity_outages": {
+      "name": "Wellington Electricity outages (direct JSON)",
+      "why": "The distributor's own feed for Wellington City, Hutt Valley and Porirua: unplanned and planned outages with per-street coordinates, customers affected and ETA. Higher resolution than the NEMA aggregation for the target area.",
+      "base_url": "https://www.welectricity.co.nz/outages/getalloutages",
+      "protocol": "JSON",
+      "auth": "none",
+      "verified": true,
+      "gotcha": "The domain is welectricity.co.nz — wellingtonelectricity.co.nz does not resolve. A companion route /outages/getlvoutagedata is a property-level GeoJSON layer WEL switches on during major events; poll it, it is the high-resolution feed. Also: the response body is JSON but the server labels it Content-Type: text/html — requests.json() copes, a strict content-type check does not.",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "wellington_water_faults": {
+      "name": "Wellington Water live faults (Job Status Public View)",
+      "why": "1,509 open water/wastewater/stormwater jobs (876 in Wellington City at verification) fed near-real-time from Wellington Water's Maximo works system, with addresses, priorities and status descriptions.",
+      "endpoint": "https://services7.arcgis.com/2ECs938g489DMWjt/arcgis/rest/services/Job_Status_Public_View/FeatureServer/5",
+      "auth": "none",
+      "verified": true,
+      "gotcha": "The live layer is index 5, not 0. Two similarly named layers on the same org — Water_Outage_(View) and Drinking_Water_Notice_(View) — are dead (0 records since 2018-19); do not use them. Wellington Water's website is now tiakiwai.co.nz.",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "community_emergency_hubs": {
+      "name": "Community Emergency Hubs + emergency facilities (GWRC/WREMO)",
+      "why": "The WREMO hub network — 126 hubs region-wide, 36 in Wellington City — where communities coordinate after a disaster. The same Emergencies_P service also carries hospitals (13), medical centres (61), fire stations (32), police stations (11) and ambulance stations (5) on layers 1-6. Layers 7-24 are the hazard layers already in this catalogue.",
+      "endpoint": "https://mapping.gw.govt.nz/arcgis/rest/services/GW/Emergencies_P/MapServer/2",
+      "auth": "none",
+      "licence": "CC BY-NC-ND 4.0 — the one restrictive licence here; fine for a hackathon, flag before productising",
+      "verified": true,
+      "gotcha": "Paginate — the layer sets exceededTransferLimit at default page size. Facility metadata is a few years stale (pre-2022 DHB names) though geometry is sound. An Upper Hutt copy (services1.arcgis.com/H0o1MSouS8mlA3T1 → Community_Emergency_Hubs_in_Wellington, 127 hubs) carries a Link field of per-hub guide PDFs, but those URLs now 404 — WREMO consolidated them into one regional hub guide: https://www.wremo.nz/assets/Hub-Guides/Regional-Hub-Guide-2025/Wellington-Region-Hub-Guide-July-2025.pdf",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "wcc_emergency_water_tanks": {
+      "name": "WCC emergency water tanks",
+      "why": "45 emergency water storage tanks across Wellington City with owner, status, type and capacity in litres. Litres-per-suburb against population is a directly presentable resilience metric. Companions on the Wellington Water org: 21 community water stations and 37 alternative abstraction points (both static 2019 reference layers).",
+      "endpoint": "https://services1.arcgis.com/CPYspmTk3abe6d7i/arcgis/rest/services/Emergency_Water_Tank_Location/FeatureServer/0",
+      "auth": "none",
+      "licence": "CC-BY 3.0 NZ",
+      "verified": true,
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "wcc_emergency_routes": {
+      "name": "WCC emergency routes (post-disaster road reopening stages)",
+      "why": "429 road segments carrying wccReopStg — the staged order WCC plans to reopen roads after a major earthquake. Overlay against liquefaction and landslide layers to see which reopening stages are at risk. The most operationally specific Wellington layer found.",
+      "endpoint": "https://services1.arcgis.com/CPYspmTk3abe6d7i/arcgis/rest/services/Emergency_Routes/FeatureServer/0",
+      "auth": "none",
+      "licence": "Service metadata says 'Please consult WCC prior to use' — email before shipping anything public",
+      "verified": true,
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "geonet_api": {
+      "name": "GeoNet APIs (quakes, CAP alerts, intensity, strong motion, volcano)",
+      "why": "The primary 'what just happened' feeds: earthquake catalogue seconds after detection, CAP-format alerts, measured vs crowdsourced felt intensity, per-station PGA/PGV (173 strong-motion stations in the Wellington bbox), volcano alert levels and GNS news bulletins.",
+      "base_url": "https://api.geonet.org.nz",
+      "protocol": "GeoJSON / CAP XML",
+      "auth": "none",
+      "licence": "CC-BY 3.0 NZ",
+      "requests": {
+        "quakes": "/quake?MMI=3",
+        "cap_feed": "/cap/1.2/GPA1.0/feed/atom1.0/quake",
+        "intensity": "/intensity?type=measured (or type=reported)",
+        "strong_motion": "/intensity/strong/processed/{publicID}",
+        "volcano": "/volcano/val"
+      },
+      "verified": true,
+      "gotcha": "Quake records include quality='deleted' retractions inline in the feed — filter them out. The old FITS API is decommissioned; time-series data now lives on Tilde (see geonet_tilde).",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "geonet_tilde": {
+      "name": "GeoNet Tilde — Wellington Harbour tsunami gauge, DART buoys, GNSS",
+      "why": "Sea level in Wellington Harbour (station WLGT, in the CBD) at 15-second cadence. The water-height-detided series has the astronomical tide already removed, so thresholding the residual IS a tsunami / storm-surge detector — no harmonic modelling needed. The dart domain adds 12 deep-ocean buoys spanning the Hikurangi-Kermadec arc (an hour of distant-source lead time), and gnss daily displacement at WGTN shows slow-slip transients.",
+      "base_url": "https://tilde.geonet.org.nz/v4",
+      "protocol": "JSON (CSV via Accept header)",
+      "auth": "none",
+      "licence": "CC-BY 3.0 NZ",
+      "requests": {
+        "wellington_gauge": "/data/coastal/WLGT/water-height-detided/40/15s/nil/latest/6h",
+        "dart_example": "/data/dart/NZB/water-height-detided/43/15m/nil/latest/1d",
+        "discovery": "/dataSummary/coastal — every station with coordinates"
+      },
+      "verified": true,
+      "gotcha": "DART sensor codes rotate on every buoy redeployment — read dataSummary and pick the code with the newest latestRecord, never hardcode. NZA (offshore Wellington) was stale at verification; use NZB/NZC. Cross-check gauge readings against UNESCO IOC (ioc-sealevelmonitoring.org, station code wlgt, 1-minute) — NZ stations there are keyed country='NWZ'.",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "gns_fault_avoidance_zones": {
+      "name": "GNS NZ Active Fault Datasets (fault avoidance zones, slip rates)",
+      "why": "Planning-grade fault data far richer than the 1:250k traces in this catalogue's active-faults: recurrence interval, slip rate, last event, single-event displacement, high-resolution traces, Fault Avoidance Zones and Fault Awareness Areas. Layer 7 (avoidance zones) returned 56 features over the Wellington bbox — Wellington, Ohariu, Moonshine, Shepherds Gully, Terawhiti and Whitemans Valley faults. 'Is this address in a fault avoidance zone' mirrors how councils regulate consents.",
+      "endpoint": "https://gis.gns.cri.nz/server/rest/services/Active_Faults/NZActiveFaultDatasets/MapServer",
+      "layer": 7,
+      "auth": "none",
+      "verified": true,
+      "gotcha": "On the same server, the Landslides, LandslideResponse and NZAFD folders are empty — live content is under Active_Faults and EILD.",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "gns_eild": {
+      "name": "GNS EILD — earthquake-induced landslide probability",
+      "why": "Coseismic landslide probability rasters at 100/250/500/1000-year PGA return periods: after a quake, which slopes are likely to fail. The cascading-hazard dimension the catalogue's static landslide layers do not model. Same folder also holds the NZ Landslide Dam Database (outburst-flood secondary hazard).",
+      "endpoint": "https://gis.gns.cri.nz/server/rest/services/EILD/EILD_V2_Map/MapServer",
+      "auth": "none",
+      "verified": true,
+      "gotcha": "Raster layers — use /export for images and /identify for per-point values. The 32 m and 256 m rasters return NoData at the Wellington CBD; the 512 m layer has coverage. Probe multiple resolutions per point.",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "fenz_operational": {
+      "name": "FENZ live fires, permits and fire season status",
+      "why": "The service behind checkitsalright.nz: active vegetation fires (17 at verification), approved burn permits (2,597 — a fire-risk proxy), and fire-season status polygons. The companion JSON API resolves any point to its nearest fire-weather station and daily danger rating. FENZ also publishes eight years of national incident CSVs (CC-BY 4.0) on data.govt.nz for demand baselines.",
+      "endpoint": "https://utility.arcgis.com/usrsvcs/servers/b381ba9bdd4046c2b71a6b1a1e39da78/rest/services/FENZ/MapServer",
+      "fire_danger_api": "https://www.checkitsalright.nz/api/v1/station/{longitude}/{latitude}",
+      "auth": "none",
+      "verified": true,
+      "gotcha": "fireandemergency.nz/incidents is Incapsula-blocked to scripts — this ArcGIS service is the working route. Fire-danger risk-index payloads were empty in winter; shape unverified until fire season.",
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "metlink_gtfs": {
+      "name": "Metlink public transport (GTFS + realtime)",
+      "why": "The complete bus/train/ferry network graph — routes, stops, timetables, shapes — as one keyless zip, refreshed roughly weekly. The offline evacuation-routing backbone. Realtime vehicle positions, trip updates and service alerts exist on the API host with a free self-service key.",
+      "base_url": "https://static.opendata.metlink.org.nz/v1/gtfs/full.zip",
+      "protocol": "GTFS zip",
+      "auth": "none for static GTFS; realtime (api.opendata.metlink.org.nz/v1/gtfs-rt/*) needs a free key from opendata.metlink.org.nz — register before the event",
+      "verified": true,
+      "found_via": "hackathon research sweep, verified 2026-08-04"
+    },
+    "nz_deprivation_2023": {
+      "name": "NZ Index of Deprivation 2023 (NZDep2023) by small area",
+      "why": "The catalogue can say where the tsunami zone is but nothing about who lives in it. NZDep2023 is the standard small-area measure of socioeconomic deprivation, and deprivation decile is the usual proxy for who cannot self-evacuate, lacks transport, or needs checking on first. 32,746 SA1 polygons nationally; 1,936 intersect the Wellington City bounding box.",
+      "endpoint": "https://services6.arcgis.com/ZVM1rEuVZjtC1Wwk/arcgis/rest/services/New_Zealand_Index_of_Deprivation_2023_WFL1/FeatureServer",
+      "layers": {
+        "0": "Statistical Area 1 (SA1) — 32,746 polygons",
+        "1": "Statistical Area 2 (SA2)"
+      },
+      "auth": "none",
+      "fields": {
+        "SA12023_code": "small-area code",
+        "NZDep2023": "decile 1 (least deprived) to 10 (most)",
+        "NZDep2023_Score": "underlying score"
+      },
+      "example": "/0/query?where=1%3D1&outFields=SA12023_code,NZDep2023&outSR=4326&geometry=174.62,-41.36,174.94,-41.14&geometryType=esriGeometryEnvelope&inSR=4326&spatialRel=esriSpatialRelIntersects&f=geojson",
+      "licence": "Not stated on the service. Underlying NZDep2023 is University of Otago work published with Stats NZ geographies — check before republishing.",
+      "verified": true,
+      "found_via": "cyclone.api and thecolab-ai/.skills sweep; independently verified 2026-08-04"
+    },
+    "nzta_traffic_cameras": {
+      "name": "NZTA live traffic cameras and delays",
+      "why": "319 state-highway cameras nationally, about 42 around the Wellington region, each with a live JPEG URL — the thing an operations room actually looks at. The catalogue already has NZTA warnings; this is the picture behind them. A companion delays feed carries 144 current entries.",
+      "endpoint": "https://www.journeys.nzta.govt.nz/assets/map-data-cache/cameras.json",
+      "delays_endpoint": "https://www.journeys.nzta.govt.nz/assets/map-data-cache/delays.json",
+      "auth": "none",
+      "protocol": "GeoJSON",
+      "fields": {
+        "Name": "camera name",
+        "ImageUrl": "live JPEG",
+        "ThumbUrl": "thumbnail",
+        "Offline": "0/1",
+        "UnderMaintenance": "0/1",
+        "Direction": "view direction"
+      },
+      "gotcha": "Check Offline and UnderMaintenance before showing an image — a camera that is down still appears in the feed. Images are fetched straight from trafficnz.info/camera/<id>.jpg.",
+      "verified": true,
+      "found_via": "cyclone.api and thecolab-ai/.skills sweep; independently verified 2026-08-04"
+    },
+    "telco_outages": {
+      "name": "Mobile network outages (2degrees, One NZ)",
+      "why": "Comms failure is a first-order emergency concern and nothing else in the catalogue covers it. 2degrees publishes planned and unplanned outages as plain JSON with location and affected area.",
+      "endpoint": "https://api.2degrees.nz/outages/publishedOutages",
+      "auth": "none",
+      "protocol": "JSON",
+      "fields": {
+        "type": "Planned/Unplanned",
+        "status": "",
+        "startTime": "",
+        "endTime": "",
+        "location": "",
+        "geoLocation": "",
+        "affectedArea": "",
+        "priority": ""
+      },
+      "gotcha": "One NZ publishes only a config file keylessly (one.nz/getconfigvalues/outage-config.json, itself JSON mislabelled as text/html); its actual outage list sits behind a GraphQL POST and is not a simple GET. NEMA's national electricity outage feed covers power, not telco.",
+      "verified": true,
+      "found_via": "cyclone.api and thecolab-ai/.skills sweep; independently verified 2026-08-04"
+    },
+    "civil_defence_ema_feed": {
+      "name": "Civil Defence Emergency Mobile Alert feed",
+      "why": "The RSS feed of Emergency Mobile Alerts actually broadcast. Note that docs/additional-sources.md lists civildefence.govt.nz under dead ends — that is the main site; this alerthub subdomain responds.",
+      "endpoint": "https://alerthub.civildefence.govt.nz/rss/pwp",
+      "auth": "none",
+      "protocol": "RSS",
+      "gotcha": "Empty between events — it carried no items when checked, which is the normal state. Test your parser against nema_cap_alerts, which has the broadcast polygons and current content.",
+      "verified": true,
+      "found_via": "cyclone.api and thecolab-ai/.skills sweep; independently verified 2026-08-04"
+    }
+  }
+}

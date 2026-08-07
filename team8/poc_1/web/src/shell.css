@@ -1,0 +1,241 @@
+/*
+ * Tab shell. Four fixed bands, top to bottom:
+ *
+ *   A  identity bar      48px, opaque, the accent's one load-bearing surface
+ *   B  control row       48px, the pills
+ *   C  the instrument    everything left over — map, or the Streets table
+ *   D  bottom strip      vitals + transport, then the provenance line
+ *
+ * The band heights are custom properties on .pp-shell and NOTHING hardcodes
+ * them. The rails used to sit at `bottom: 168px` under a 350px bottom bar, so
+ * 182px of every floating card rendered behind the time strip — half of what
+ * read as "the panels land mid-sentence" was that bug, not panel length.
+ *
+ * z-index budget (map internals own 2–5, see map.css):
+ *   10  floating cards
+ *   12  the bars — they are chrome and always win
+ *   20  modal scrim + dialog
+ */
+
+.pp-shell {
+  --pp-chrome-top: 96px;
+  /* Published so the map can dock its own chrome clear of the rails instead of
+     guessing. The selection readout spent this whole build rendering behind the
+     left card. */
+  --pp-rail-left: 376px;
+  --pp-rail-right: 392px;
+  --pp-chrome-footer: 28px;
+  /* includes the footer */
+  --pp-chrome-bottom: 300px;
+
+  position: relative;
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+  background: rgb(var(--pp-color-bg-base));
+}
+
+/* Streets carries no vitals strip: on a ranked table every row already has its
+   own trace, and a citywide one is context for a map. */
+.pp-shell[data-tab='streets'] {
+  --pp-chrome-bottom: 160px;
+}
+
+/* --- band C: the instrument ------------------------------------------- */
+
+.pp-shell__stage {
+  position: absolute;
+  inset: var(--pp-chrome-top) 0 var(--pp-chrome-bottom);
+  background: rgb(var(--pp-color-bg-void));
+}
+/* Streets is the ONLY scrolling surface in the product. */
+.pp-shell__stage--table {
+  background: rgb(var(--pp-color-bg-base));
+  overflow: hidden;
+}
+
+/* --- floating cards ---------------------------------------------------- */
+
+.pp-float {
+  position: absolute;
+  z-index: 10;
+  pointer-events: auto;
+}
+
+/* Left card: what happened. Right card: what you clicked. 480px each, and if
+   either ever scrolls the declutter has regressed — see the acceptance check. */
+.pp-shell__left,
+.pp-shell__right {
+  /* 12px of inset each end became 4: the projector pass took the base type
+     step to 14px and the 23 Oct rails came out 10px over budget, and 16px of
+     empty margin is a cheaper thing to spend than a finding. */
+  top: calc(var(--pp-chrome-top) + var(--pp-space-1));
+  bottom: calc(var(--pp-chrome-bottom) + var(--pp-space-1));
+  /* 340 -> 376. The projector pass took the base type step from 13px to 14px
+     and the rails are on a hard 480px height budget, so the pixels had to come
+     from somewhere: they came from width, where they also help, rather than
+     from a limitation. Between the rails the map keeps 700px at 1512. */
+  width: var(--pp-rail-left);
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 var(--pp-space-1) var(--pp-space-1);
+}
+.pp-shell__left {
+  left: var(--pp-space-4);
+}
+.pp-shell__right {
+  right: var(--pp-space-4);
+  width: var(--pp-rail-right);
+}
+
+/* --- band D: bottom strip --------------------------------------------- */
+
+.pp-shell__bottom {
+  position: absolute;
+  z-index: 12;
+  left: 0;
+  right: 0;
+  bottom: var(--pp-chrome-footer);
+  height: calc(var(--pp-chrome-bottom) - var(--pp-chrome-footer));
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  padding: var(--pp-space-2) var(--pp-space-4);
+  background: rgb(var(--pp-color-bg-base));
+  border-top: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-shell__bottom > .pp-vitals {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.pp-shell__footer {
+  position: absolute;
+  z-index: 12;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--pp-chrome-footer);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--pp-space-4);
+  background: rgb(var(--pp-color-bg-base));
+}
+
+/* The honesty line is required to stay visible on BOTH tabs, so it is its own
+   band rather than the last child of the bottom bar. One row at 1512. */
+.pp-prov {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0 var(--pp-space-2);
+  width: 100%;
+  /* The required statements live on this row. 12px was the smallest type in the
+     app and it carried "In an emergency, call 111". */
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-prov__emergency {
+  color: rgb(var(--pp-color-text-primary));
+  font-weight: 600;
+  flex: none;
+}
+.pp-prov > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pp-prov__sep {
+  opacity: 0.5;
+}
+.pp-prov__more,
+.pp-prov__gallery {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  flex: none;
+  color: rgb(var(--pp-color-status-info));
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.pp-prov__gallery {
+  margin-left: auto;
+}
+
+/* --- presentation mode (P) -------------------------------------------- *
+ * Drops the floating cards and nothing else. Both bars and the provenance
+ * line stay up, so the presentation screenshot still carries NOT LIVE and the
+ * 111 line. On Streets there are no rails, so P is a no-op — it must never
+ * hide the table. */
+.pp-shell--stage .pp-shell__left,
+.pp-shell--stage .pp-shell__right {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+}
+.pp-shell__left,
+.pp-shell__right {
+  transition:
+    opacity var(--pp-motion-base) var(--pp-ease-standard),
+    transform var(--pp-motion-base) var(--pp-ease-standard);
+}
+
+/* --- misc ------------------------------------------------------------- */
+
+.pp-slot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--pp-space-5);
+  height: 100%;
+  color: rgb(var(--pp-color-text-muted));
+}
+
+.pp-shell__left::-webkit-scrollbar,
+.pp-shell__right::-webkit-scrollbar {
+  width: 6px;
+}
+.pp-shell__left::-webkit-scrollbar-thumb,
+.pp-shell__right::-webkit-scrollbar-thumb {
+  background: rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-pill);
+}
+.pp-shell__left::-webkit-scrollbar-track,
+.pp-shell__right::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/*
+ * Narrow: the cards become a bottom sheet. The map never stops being the page
+ * — reverting to a scrolling column is what made the old layout unreadable.
+ */
+@media (max-width: 1180px) {
+  .pp-shell__left,
+  .pp-shell__right {
+    top: auto;
+    bottom: calc(var(--pp-chrome-bottom) + var(--pp-space-3));
+    left: var(--pp-space-3);
+    right: var(--pp-space-3);
+    width: auto;
+    max-height: 38dvh;
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .pp-shell__right {
+    display: none;
+  }
+  .pp-shell__left > * {
+    flex: 0 0 300px;
+  }
+}
