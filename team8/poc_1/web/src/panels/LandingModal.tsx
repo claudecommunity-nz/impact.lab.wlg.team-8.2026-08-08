@@ -3,9 +3,14 @@ import { Button, Modal } from '../ui';
 import { landing, honesty } from '../copy/strings';
 import { useDispatch } from '../state/app';
 import { useData } from '../data/DataProvider';
+import { goToRoute } from '../nav/route';
 
 const SEEN_KEY = 'pp:seen-landing';
-const EVENT_DATE = '2025-10-23';
+
+/** Tuesday 18:00 — the evening peak of a confirmed day, so the map has flow to
+ *  draw and the chart has an actual line to sit against its forecast. Landing
+ *  on 00:00 Monday puts the demo on an empty overnight hour. */
+const DEMO_WEEK_HOUR = 42;
 
 function seen(): boolean {
   try {
@@ -29,10 +34,14 @@ export function LandingModal({
   const dispatch = useDispatch();
   const { manifest } = useData();
 
+  /**
+   * Honours its own label. It used to dispatch SET_DATE '2025-10-23', which
+   * Shell's reconcile effect resets the instant the week route sees a date
+   * outside the week — so clicking the hero CTA visibly did nothing.
+   */
   const start = () => {
-    dispatch({ type: 'SET_DATE', date: EVENT_DATE });
-    dispatch({ type: 'SEEK', hour: 5 });
-    dispatch({ type: 'PLAY' });
+    goToRoute('week');
+    dispatch({ type: 'SEEK_WEEK', index: DEMO_WEEK_HOUR });
     onClose();
   };
 

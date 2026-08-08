@@ -91,9 +91,15 @@
  * Band B — control row. Everything here was a card in a rail: 1452px of
  * rail reclaimed, and the controls are where the eye already is.
  * =================================================================== */
+/* z-index 13, one above the rest of the chrome. This row is the only bar that
+   opens something over the stage, and because it is a stacking context every
+   descendant is trapped at its level — a panel at 13 inside a bar at 12 is
+   really 12.13 and loses to .pp-shell__bottom / .pp-shell__footer (also 12,
+   later in the DOM). The bands never overlap, so lifting the whole row costs
+   nothing and the popover can no longer be buried. */
 .pp-controls {
   position: absolute;
-  z-index: 12;
+  z-index: 13;
   top: var(--pp-space-7);
   left: 0;
   right: 0;
@@ -188,11 +194,17 @@
   position: relative;
   flex: none;
 }
+/* Fixed, not absolute, and top/right come from a measured anchor rect in
+   LayerPills. The panel used to be clipped to a sliver no matter its z-index:
+   .pp-controls sets `overflow-x: auto` as its narrow-width safety valve, and
+   CSS promotes the other axis to `auto` too, so the row is a scroll container
+   in BOTH directions and an absolutely positioned child is cut at its padding
+   box. Fixed escapes the clip (no ancestor sets transform/filter/contain, so
+   the viewport is still its containing block) while staying a DOM descendant
+   of the group — which is what keeps the outside-click test working. */
 .pp-pop__panel {
-  position: absolute;
+  position: fixed;
   z-index: 13;
-  top: calc(100% + var(--pp-space-2));
-  right: 0;
   width: 320px;
   display: flex;
   flex-direction: column;
@@ -203,4 +215,120 @@
   border-radius: var(--pp-radius-panel);
   box-shadow: var(--pp-elev-3);
   white-space: normal;
+}
+
+/* =================================================================== *
+ * Band B — the calendar strip. Seven chips and the mode pills.
+ *
+ * The chips replace the replay-day pills on the product tabs. They are a
+ * different shape on purpose: a replay pill picks an archived incident, a
+ * calendar chip picks a day of THIS week, three of which have not happened.
+ * =================================================================== */
+.pp-cal {
+  position: absolute;
+  z-index: 13;
+  top: var(--pp-space-7);
+  left: 0;
+  right: 0;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-4);
+  padding: 0 var(--pp-space-4);
+  background: rgb(var(--pp-color-surface-1));
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pp-cal::-webkit-scrollbar {
+  display: none;
+}
+
+.pp-cal__label {
+  flex: none;
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+.pp-cal__days {
+  display: flex;
+  gap: var(--pp-space-1);
+  flex: none;
+}
+
+.pp-cal__chip {
+  display: grid;
+  gap: 1px;
+  min-width: 92px;
+  padding: var(--pp-space-1) var(--pp-space-2);
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--pp-radius-md);
+  cursor: pointer;
+  font: inherit;
+  color: rgb(var(--pp-color-text-primary));
+  transition: border-color var(--pp-motion-fast) var(--pp-ease-standard);
+}
+.pp-cal__chip:hover {
+  border-color: rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-cal__chip[data-selected='true'] {
+  border-color: rgb(var(--pp-color-border-strong) / var(--pp-alpha-border-strong));
+  background: rgb(var(--pp-color-surface-2));
+}
+
+/* A day that has not happened is hatched and monochrome. The suffix alone
+   ("fcst") is not enough at chip scale — the eye takes the figure and the
+   colour first, so a forecast is denied both: no sign, no semantic colour, and
+   a volume rather than a percentage. */
+.pp-cal__chip[data-state='forecast'] {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(var(--pp-color-sem-suppressed) / 0.1) 0 2px,
+    transparent 2px 8px
+  );
+}
+.pp-cal__chip[data-state='forecast'] .pp-cal__short,
+.pp-cal__chip[data-state='forecast'] .pp-cal__value {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+.pp-cal__short {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-cal__value {
+  font-size: 0.9375rem;
+  line-height: 1.1;
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-cal__value[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-cal__value[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-cal__suffix {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+/* Two pill groups at the right end of the strip: the mode filter and the chart
+   window. They are separated by a rule rather than by space alone — five pills
+   in an unbroken row read as one five-way choice, and the first click after
+   that mistake is always the wrong one. */
+.pp-cal__modes {
+  margin-left: auto;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-3);
+}
+.pp-cal__scope {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+  padding-left: var(--pp-space-3);
+  border-left: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-cal__scope-label {
+  color: rgb(var(--pp-color-text-muted));
 }

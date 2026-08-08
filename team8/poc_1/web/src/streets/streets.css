@@ -105,6 +105,11 @@
 .pp-streets__status {
   min-height: 1.2em;
 }
+/* The one fact on this row a judge must not miss: which day the table is. The
+   rest of the line is counts, and counts read as chrome. */
+.pp-streets__asof {
+  color: rgb(var(--pp-color-text-primary));
+}
 
 /* ------------------------------------------------------------------ table */
 
@@ -266,7 +271,27 @@ tbody .pp-st__row:focus-visible {
 .pp-st__c-indent {
   grid-column: 1 / 3;
 }
+/* Name plus its (i). Flex because the badge must never be what gets
+   ellipsised — a caveat you cannot open is a caveat that is not there. */
 .pp-st__row--child .pp-st__c-name {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-st__child-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pp-st__caveat {
+  display: flex;
+  flex: none;
+}
+.pp-st__caveat-list {
+  margin: var(--pp-space-1) 0 0;
+  padding-left: var(--pp-space-4);
   color: rgb(var(--pp-color-text-secondary));
 }
 
@@ -392,10 +417,24 @@ tbody .pp-st__row:focus-visible {
 /* Vertical compression squashes the stroke with everything else, so the
    weights are set against the compressed box, not the viewBox. */
 .pp-streets .pp-trace__actual {
-  stroke-width: 3.4;
+  stroke-width: 4;
 }
-.pp-streets .pp-trace__ghost {
-  stroke-width: 2.4;
+/* Measured vs forecast, at 30px.
+   The primitive's ghost is solid `sem-ghost-core` at 2.4 against a `pulse-
+   healthy` actual at 3.4. On a 150px week chart those are plainly two lines;
+   compressed into a row they were two dark strokes of near-identical weight,
+   and which one was the measurement became a guess. So at ROW SCALE ONLY the
+   forecast goes lighter (`sem-ghost`, the paper-side end of the pair) and
+   dashed — a mark you read as "not measured" before you have read anything
+   else — while the actual gets heavier still.
+   Both ghost classes are listed because VitalsTrace uses `__ghost` on a settled
+   day and `__ghost--forecast` past a horizon: same fact, two branches, and one
+   of them changing appearance mid-table would read as a claim. */
+.pp-streets .pp-trace__ghost,
+.pp-streets .pp-trace__ghost--forecast {
+  stroke: rgb(var(--pp-color-sem-ghost));
+  stroke-width: 2.2;
+  stroke-dasharray: 7 5;
 }
 /* 0.55 reads as an erasure block at 28px. */
 .pp-streets .pp-trace__gap {
@@ -409,6 +448,15 @@ tbody .pp-st__row:focus-visible {
 }
 .pp-streets[data-refused='true'] .pp-trace__actual--deficit {
   stroke: rgb(var(--pp-color-sem-suppressed));
+}
+/* The same refusal, applied to the horizon branch. 4 Oct is BOTH refused and
+   the only day whose feed dies mid-day, so passing `horizon` swapped every
+   deficit area for the week chart's signed shortfall/surplus fills — which
+   wear the emergency and the recovery colours and would have quietly re-called
+   the day we just said we would not call. */
+.pp-streets[data-refused='true'] .pp-trace__shortfall,
+.pp-streets[data-refused='true'] .pp-trace__surplus {
+  fill: rgb(var(--pp-color-sem-suppressed) / 0.18);
 }
 
 /* No baseline means there is nothing to draw a ghost from. A flat line along

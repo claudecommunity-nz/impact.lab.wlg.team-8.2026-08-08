@@ -9,9 +9,11 @@ import type {
   ContextFile,
   CountlineIndex,
   DayFile,
+  EdgesFile,
   IsoDate,
   Manifest,
   VitalsFile,
+  WeekFile,
 } from './types';
 
 const cache = new Map<string, Promise<unknown>>();
@@ -37,7 +39,18 @@ export const loadCountlines = () => get<CountlineIndex>('countlines.json');
 export const loadDay = (date: IsoDate) => get<DayFile>(`day/${date}.json`);
 export const loadContext = (date: IsoDate) => get<ContextFile>(`context/${date}.json`);
 export const loadVitals = (file: string) => get<VitalsFile>(strip(file));
+/** Week-scoped, not date-scoped: both are loaded once and never refetched. */
+export const loadWeek = () => get<WeekFile>('week.json');
+export const loadEdges = () => get<EdgesFile>('edges.json');
 export const loadGeoJson = (file: string) => get<GeoJsonLike>(strip(file));
+
+/**
+ * The pluggable feed layer. One file per feed on purpose: a source is added by
+ * dropping an adapter in the pipeline and a file in this directory, and nothing
+ * that already works has to be touched. The extra round trips are the point
+ * being demonstrated, not an oversight.
+ */
+export const loadJson = <T>(file: string) => get<T>(strip(file));
 
 /** deck.gl's GeoJsonLayer wants the real GeoJSON types, not a lookalike. */
 export type GeoJsonLike = FeatureCollection;

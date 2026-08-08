@@ -1,0 +1,389 @@
+/* The week view. NO COLOUR LITERALS — every colour is rgb(var(--pp-color-*)). */
+
+/* --- band C: three columns -------------------------------------------- *
+ * 350 / 1fr / 330 from the brief. The columns are real grid cells, not cards
+ * floating on the map: the left column is a briefing document, and a briefing
+ * document that occludes the instrument is just a worse instrument. */
+.pp-week {
+  display: grid;
+  grid-template-columns: 350px minmax(0, 1fr) 330px;
+  height: 100%;
+  background: rgb(var(--pp-color-bg-base));
+}
+
+.pp-week__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transition:
+    opacity var(--pp-motion-base) var(--pp-ease-standard),
+    transform var(--pp-motion-base) var(--pp-ease-standard);
+}
+.pp-week__col--left {
+  border-right: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-week__col--right {
+  border-left: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-week__col::-webkit-scrollbar {
+  width: 6px;
+}
+.pp-week__col::-webkit-scrollbar-thumb {
+  background: rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-pill);
+}
+.pp-week__col::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* The map docks its own chrome against --pp-rail-*; inside a grid cell there
+   are no rails to clear, so they are zeroed here rather than in the map. */
+.pp-week__map {
+  position: relative;
+  min-width: 0;
+  --pp-rail-left: 0px;
+  --pp-rail-right: 0px;
+  background: rgb(var(--pp-color-bg-void));
+}
+
+/* Panels in these columns are a briefing sheet, not floating cards on a map:
+   three of them stack in 640px of height, and the primitive's 24px padding is
+   tuned for one card floating alone. Two cards per column is the requirement —
+   at the primitive's spacing "What to watch" and "Standing conditions" both
+   started below the fold, which for a card whose job is caveats is the same as
+   not shipping it. */
+.pp-week__col .pp-panel__head {
+  padding: var(--pp-space-3) var(--pp-space-3) var(--pp-space-2);
+}
+.pp-week__col .pp-panel__body {
+  padding: 0 var(--pp-space-3) var(--pp-space-3);
+}
+.pp-week__col .pp-panel__footnote {
+  padding: var(--pp-space-2) var(--pp-space-3);
+}
+
+/* .pp-grid-2 is auto-fit at minmax(150px, 1fr); a 350px column has ~290px of
+   inner width, so the two tiles wrapped to one per row and pushed "What to
+   watch" — the briefing half of the product — below the fold. In a column this
+   narrow the two-up is a layout decision, not a responsive one. */
+.pp-week__col .pp-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--pp-space-2);
+}
+
+/* The hero figure is 7 digits plus separators. At the display step it wrapped
+   inside 290px, and a wrapped number stops being one number. The two-up tiles
+   below it are half that width again and carry the same 7 digits. */
+.pp-week__col .pp-t-metric-xl {
+  font-size: 1.75rem;
+}
+.pp-week__col .pp-grid-2 .pp-t-metric {
+  font-size: 1rem;
+}
+.pp-week__col .pp-grid-2 .pp-stat__value {
+  flex-wrap: nowrap;
+  align-items: baseline;
+}
+
+/* --- what to watch ----------------------------------------------------- */
+
+.pp-watch {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+}
+.pp-watch__row {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  gap: var(--pp-space-2);
+  align-items: baseline;
+  padding-bottom: var(--pp-space-2);
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-watch__row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.pp-watch__when {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-watch__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pp-watch__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pp-space-2);
+}
+/* An advisement that did not move a published number has to say so on its
+   face. Nothing invented may change a figure this tool prints. */
+.pp-watch__tag {
+  color: rgb(var(--pp-color-status-provisional));
+}
+.pp-watch__tag[data-applied='true'] {
+  color: rgb(var(--pp-color-status-info));
+}
+.pp-watch__delta[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-watch__delta[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-watch__delta[data-dir='none'] {
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-watch__empty {
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+/* --- edges off forecast ------------------------------------------------ */
+
+.pp-edges {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.pp-edges__row {
+  display: grid;
+  grid-template-columns: 4px minmax(0, 1fr) auto;
+  gap: var(--pp-space-2);
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-edges__row:last-child {
+  border-bottom: 0;
+}
+/* One camera speaking for a whole street. Ranked, greyed, never dropped —
+   hiding these would make 123 sensors look like coverage of a city. */
+.pp-edges__row[data-judged='false'] {
+  opacity: 0.5;
+}
+.pp-edges__chip {
+  align-self: stretch;
+  border-radius: var(--pp-radius-sm);
+  background: rgb(var(--pp-color-sem-unknown));
+}
+.pp-edges__chip[data-dir='down'] {
+  background: rgb(var(--pp-color-sem-deficit));
+}
+.pp-edges__chip[data-dir='up'] {
+  background: rgb(var(--pp-color-sem-surplus));
+}
+.pp-edges__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pp-edges__name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pp-edges__flow {
+  color: rgb(var(--pp-color-text-secondary));
+  text-align: right;
+}
+.pp-edges__dev {
+  min-width: 52px;
+  text-align: right;
+}
+.pp-edges__dev[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-edges__dev[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-edges__all {
+  width: 100%;
+  margin-top: var(--pp-space-2);
+  justify-content: center;
+}
+
+/* The right column has to fit two panels above the week chart at 900px, and
+   the second one is the caveats. Every line saved here is a line of "10 sites
+   are dark" that a judge actually sees. */
+.pp-week__col--right .pp-panel__footnote {
+  line-height: 1.35;
+}
+
+/* --- the 524px budget -------------------------------------------------- *
+ * Both columns are 524px tall at 1512x900 and were carrying ~1700px of
+ * content, so most cards showed a title and nothing else — the edge list, the
+ * payoff for the map, rendered 0 of its rows. Nobody scrolls a side rail in a
+ * four-minute demo, so the fix is to bound the prose rather than to trust the
+ * gutter. Footnotes and free-text details are what run long: they are agency
+ * copy and area-method sentences of unbounded length, and they were evicting
+ * the numbers they annotate. Clamped, not hidden — the first lines still say
+ * what the caveat is about, and the full text is in the explainer. */
+.pp-week__col .pp-panel__footnote,
+.pp-week__col .pp-watch__detail,
+.pp-week__col .pp-area__lead > .pp-t-caption {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.pp-week__col .pp-panel__footnote {
+  -webkit-line-clamp: 3;
+}
+/* Eleven wrapped lines of "Due to various works, this off-ramp will be closed
+   on Sunday 9th…" in a 293px column, for one overnight motorway ramp. */
+.pp-week__col .pp-watch__detail {
+  -webkit-line-clamp: 2;
+}
+.pp-week__col .pp-area__lead > .pp-t-caption {
+  -webkit-line-clamp: 3;
+}
+
+/* --- standing conditions ----------------------------------------------- *
+ * Bricks, borrowed wholesale from the feed roster in ui.css. Only the things
+ * ui.css cannot know live here: these tiles are keyed by `kind`, not by feed
+ * `status`, and a 330px rail is too narrow for the roster's fixed two-up. */
+
+/* At 330px the panel body is ~282px inside; two columns is ~121px of text, and
+   "0 of 121 camera sites dark on Thu 6 Aug" wraps to five lines in that. One
+   column, so the claim stays one line of scanning rather than a paragraph. */
+.pp-bricks--cond {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* The (i) is the whole point of the tile — put it at the far edge where it is
+   found by position, not by reading. */
+.pp-bricks--cond .pp-brick__foot .pp-info {
+  margin-left: auto;
+}
+
+/* The status edge, keyed on the condition kind. Roadworks are a fact about the
+   street; the other three are facts about our own instrument, which is a
+   weaker claim and reads quieter. */
+.pp-brick[data-kind='closure'] {
+  border-left-color: rgb(var(--pp-color-status-warn));
+}
+.pp-brick[data-kind='sensor'],
+.pp-brick[data-kind='new_sites'] {
+  border-left-color: rgb(var(--pp-color-status-provisional));
+}
+.pp-brick[data-kind='coverage'] {
+  border-left-color: rgb(var(--pp-color-text-muted));
+}
+.pp-brick__tag[data-kind='closure'] {
+  color: rgb(var(--pp-color-status-warn));
+}
+
+/* Sentences stacked inside a popover. Without this they run together into one
+   block and the window label stops reading as a label. */
+.pp-cond__pop,
+.pp-area__pop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+}
+.pp-cond__tag {
+  letter-spacing: 0.06em;
+  color: rgb(var(--pp-color-status-warn));
+}
+.pp-cond__tag[data-kind='sensor'],
+.pp-cond__tag[data-kind='new_sites'] {
+  color: rgb(var(--pp-color-status-provisional));
+}
+.pp-cond__tag[data-kind='coverage'] {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+/* --- band D: the week chart -------------------------------------------- *
+ * Owned by ui.css, next to the VitalsTrace primitive it is built on. Nothing
+ * for it here: two files styling one component is how a chart ends up with two
+ * different scrubbers depending on which stylesheet loaded last.
+ */
+
+/* Narrow: the right column goes first — it is a ranked list you can reach on
+   Streets. The map never stops being the middle of the page. */
+@media (max-width: 1280px) {
+  .pp-week {
+    grid-template-columns: 320px minmax(0, 1fr);
+  }
+  .pp-week__col--right {
+    display: none;
+  }
+}
+@media (max-width: 980px) {
+  .pp-week {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pp-week__col--left {
+    display: none;
+  }
+}
+
+/* --- What to watch: one column ------------------------------------------
+ * Was a 74px when-gutter + body + delta, which wrapped a long NZTA notice
+ * title onto four lines inside a 380px rail. Single column: pill and delta on
+ * one head row, then the title at full width.
+ */
+.pp-watch__row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: var(--pp-space-2) 0;
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-watch__head {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+}
+.pp-watch__pill {
+  padding: 1px var(--pp-space-2);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-pill);
+  background: rgb(var(--pp-color-surface-2));
+  color: rgb(var(--pp-color-text-secondary));
+  white-space: nowrap;
+  font-size: 0.6875rem;
+}
+.pp-watch__head .pp-watch__delta {
+  margin-left: auto;
+}
+.pp-watch__title {
+  color: rgb(var(--pp-color-text-primary));
+  line-height: 1.3;
+}
+/* Two lines, then the (i). Agency notices run to a paragraph and this is a
+   rail, not a document. */
+.pp-watch__detail {
+  display: block;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+.pp-watch__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--pp-space-2);
+  align-items: baseline;
+}
+.pp-weekchart__rates {
+  display: inline-flex;
+  gap: 2px;
+  flex: none;
+}
+
+/* Browsers give <ul>/<ol> 40px of padding-inline-start. `list-style: none`
+   removes the marker but NOT the space it sat in, so every card carried a
+   phantom left gutter that pushed its own colour bar off the panel edge. */
+.pp-watch,
+.pp-edges,
+.pp-arearisk__list,
+.pp-week__col ul,
+.pp-week__col ol {
+  padding-left: 0;
+  margin-left: 0;
+}

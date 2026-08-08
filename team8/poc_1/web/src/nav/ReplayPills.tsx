@@ -33,6 +33,7 @@ export function ReplayPills() {
           variant="chip"
           className="pp-pill pp-pill--day"
           data-active={d.date === date}
+          data-date={d.date}
           data-verdict={d.verdict}
           title={d.label}
           aria-pressed={d.date === date}

@@ -384,6 +384,23 @@ button.pp-dx {
 .pp-trace__grid--major {
   stroke: rgb(var(--pp-color-border-subtle) / 0.09);
 }
+/* Midnight, and a stub at noon. Stronger than chart-paper because on a week
+   these are the only vertical marks left, and they carry the axis. */
+.pp-trace__grid--day {
+  stroke: rgb(var(--pp-color-border-subtle) / 0.16);
+}
+.pp-trace__grid--noon {
+  stroke: rgb(var(--pp-color-border-subtle) / 0.28);
+}
+/* Alternating days. 0.03 of the border ink: a full-height area at the density
+   of a grid line reads about three times as heavy as one, so this sits well
+   under it — the band should be felt, and the trace still read over it. */
+.pp-trace__day {
+  fill: none;
+}
+.pp-trace__day[data-alt='true'] {
+  fill: rgb(var(--pp-color-border-subtle) / 0.03);
+}
 .pp-trace__band {
   fill: rgb(var(--pp-color-sem-ghost) / 0.14);
 }
@@ -419,6 +436,204 @@ button.pp-dx {
 }
 .pp-trace__gap {
   fill: rgb(var(--pp-color-sem-offline) / 0.55);
+}
+
+/* --- horizon mode ------------------------------------------------------ *
+ * Only rendered when VitalsTrace is given a `horizon`. See its comment: the
+ * forecast keeps going, the actual stops, and the difference between those two
+ * facts has to survive being seen from the back of a room. */
+
+/* Dashed, because a forecast is not a measurement. Same ink as the solid ghost
+   so the eye reads them as one family. */
+.pp-trace__ghost--forecast {
+  stroke-dasharray: 5 4;
+  stroke-width: 1.75;
+}
+/* The unreached part of the week. Deliberately a WASH, not a blank: an empty
+   right-hand third reads as a city that stopped moving, which is the exact
+   misreading this whole tool exists to refuse. */
+.pp-trace__unknown {
+  fill: rgb(var(--pp-color-sem-unknown) / 0.1);
+}
+/* Where knowledge stops. Deliberately unlike .pp-trace__cursor (thin, solid,
+   ink): that rule is a UI position you can scrub away, this one is a property
+   of the feed. Giving both the same rendering is what made the wash claim "no
+   actual yet" over 36 hours the feed actually holds. */
+.pp-trace__horizon {
+  stroke: rgb(var(--pp-color-status-provisional));
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+/* Signed divergence, filled to the forecast. Weaker than the day trace's
+   deficit area (0.35): here it runs for 96 hours rather than a two-hour
+   emergency, so it is ground the lines sit on, not an alarm. */
+.pp-trace__shortfall {
+  fill: rgb(var(--pp-color-sem-deficit) / 0.22);
+  stroke: none;
+}
+.pp-trace__surplus {
+  fill: rgb(var(--pp-color-sem-surplus) / 0.22);
+  stroke: none;
+}
+/* Hollow: the cursor is past the horizon and sitting on a forecast. A filled
+   dot there would read as a reading that exists. */
+.pp-trace__dot--forecast {
+  fill: rgb(var(--pp-color-surface-1));
+  stroke: rgb(var(--pp-color-sem-ghost-core));
+  stroke-width: 1.5;
+}
+
+/* ================================================================== *
+ * Band D — the citywide week chart.
+ *
+ * Lives here rather than in panels.css only because ui.css is the file
+ * this band owns; it is a feature composite, not a primitive, and if the
+ * two files are ever reconciled this section belongs in panels.css.
+ * ================================================================== */
+.pp-weekchart {
+  /* Fills whatever the bottom bar gives it. The chart was sized in absolute
+     pixels and the day axis plus the scrubber fell off the bottom of the band
+     at 1512x900 — the two controls that make the horizon legible. Now the
+     chrome takes what it needs and the plot absorbs the rest. */
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-panel);
+  padding: var(--pp-space-2) var(--pp-space-4);
+}
+.pp-weekchart--empty {
+  padding: var(--pp-space-5);
+}
+.pp-weekchart__head {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--pp-space-4);
+}
+.pp-weekchart__plot {
+  position: relative;
+  flex: 1 1 auto;
+  /* Never collapse to nothing: a 0px trace is a chart that silently vanished
+     rather than one that got tight. */
+  min-height: 72px;
+}
+/* The SVG is drawn with preserveAspectRatio="none", so stretching it to the
+   box costs nothing — the viewBox is a coordinate system, not a size. */
+.pp-weekchart__plot > .pp-trace {
+  height: 100%;
+  border-bottom: 0;
+}
+/* The horizon label sits in HTML, not in the SVG: the SVG is drawn with
+   preserveAspectRatio="none", so any <text> inside it would be stretched
+   horizontally by whatever width the viewport happens to be. */
+.pp-weekchart__flag {
+  position: absolute;
+  top: var(--pp-space-1);
+  padding: 2px var(--pp-space-2);
+  border-radius: var(--pp-radius-chip, 3px);
+  background: rgb(var(--pp-color-surface-1) / 0.86);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.pp-weekchart__flag {
+  transform: translateX(var(--pp-space-2));
+  /* Same ink as the dashed horizon rule it labels, so the two read as one
+     mark rather than as a caption that happens to be nearby. */
+  color: rgb(var(--pp-color-status-provisional));
+}
+
+/* Seven cells, positioned off the SVG's own geometry rather than at 1/7 each —
+   day 7 is 23 hours wide on an endpoint-anchored axis, not 24, and evenly
+   spaced cells drift off the day bands they are labelling. */
+.pp-weekchart__axis {
+  position: relative;
+  flex: none;
+  height: 20px;
+}
+.pp-weekchart__day {
+  position: absolute;
+  top: 0;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--pp-space-1);
+  border-radius: var(--pp-radius-chip, 3px);
+  color: rgb(var(--pp-color-text-muted));
+  white-space: nowrap;
+  overflow: hidden;
+}
+.pp-weekchart__day[data-state='forecast'] {
+  font-style: italic;
+}
+.pp-weekchart__day[data-current='true'] {
+  background: rgb(var(--pp-color-text-primary) / 0.07);
+  color: rgb(var(--pp-color-text-primary));
+  font-weight: 600;
+}
+.pp-weekchart__dev {
+  font-family: var(--pp-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.pp-weekchart__dev[data-sign='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-weekchart__dev[data-sign='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+
+.pp-weekchart__cursor {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-3);
+}
+.pp-weekchart__clock {
+  min-width: 12ch;
+}
+.pp-weekchart__range {
+  flex: 1;
+  min-width: 200px;
+  accent-color: rgb(var(--pp-color-text-primary));
+}
+.pp-weekchart__legend {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-3);
+  white-space: nowrap;
+}
+.pp-weekchart__key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pp-weekchart__swatch {
+  width: 18px;
+  height: 0;
+  border-top: 2.5px solid rgb(var(--pp-color-sem-pulse-healthy));
+}
+.pp-weekchart__swatch--forecast {
+  border-top: 2px dashed rgb(var(--pp-color-sem-ghost-core));
+}
+.pp-weekchart__swatch--band {
+  height: 10px;
+  border: 0;
+  background: rgb(var(--pp-color-sem-ghost) / 0.14);
+}
+.pp-weekchart__swatch--unknown {
+  height: 10px;
+  border: 0;
+  background: rgb(var(--pp-color-sem-unknown) / 0.1);
 }
 
 /* ------------------------------------------------------------------ misc */
@@ -598,4 +813,105 @@ button.pp-dx {
   .pp-modal__panel {
     animation: none;
   }
+}
+
+/* =================================================================== *
+ * InfoBadge — the (i) that holds a sentence the card should not carry.
+ * =================================================================== */
+.pp-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+  padding: 0;
+  border-radius: var(--pp-radius-pill);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+  background: transparent;
+  color: rgb(var(--pp-color-text-muted));
+  font: 600 10px/1 var(--pp-font-serif);
+  font-style: italic;
+  cursor: pointer;
+}
+.pp-info:hover,
+.pp-info[aria-expanded='true'] {
+  background: rgb(var(--pp-color-surface-3));
+  color: rgb(var(--pp-color-text-primary));
+}
+/* Fixed, so no ancestor's overflow or stacking context can clip it — the nav
+   popover lost that fight for an entire build. Above the modal scrim's 20. */
+.pp-info__pop {
+  position: fixed;
+  z-index: 30;
+  padding: var(--pp-space-3);
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
+  border-radius: var(--pp-radius-md);
+  box-shadow: var(--pp-elev-3);
+  font-size: var(--pp-type-caption-size);
+  line-height: 1.45;
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+/* =================================================================== *
+ * Bricks — a modular adapter, drawn as one.
+ * =================================================================== */
+.pp-bricks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--pp-space-2);
+}
+.pp-brick {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  padding: var(--pp-space-2);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-radius: var(--pp-radius-md);
+  background: rgb(var(--pp-color-surface-2));
+  /* The status is the first thing to read, so it gets the edge. */
+  border-left-width: 3px;
+}
+.pp-brick[data-status='connected'] {
+  border-left-color: rgb(var(--pp-color-status-ok));
+}
+.pp-brick[data-status='hand-entered'] {
+  border-left-color: rgb(var(--pp-color-status-provisional));
+}
+.pp-brick[data-status='stub'] {
+  border-left-color: rgb(var(--pp-color-sem-unknown));
+}
+.pp-brick__name {
+  color: rgb(var(--pp-color-text-primary));
+  line-height: 1.25;
+}
+.pp-brick__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+  margin-top: auto;
+}
+.pp-brick__tag {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.625rem;
+}
+.pp-brick__tag[data-status='connected'] {
+  color: rgb(var(--pp-color-status-ok));
+}
+.pp-brick__tag[data-status='hand-entered'] {
+  color: rgb(var(--pp-color-status-provisional));
+}
+.pp-brick__tag[data-status='stub'] {
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-roster__note {
+  display: flex;
+  align-items: center;
+  gap: var(--pp-space-2);
+  margin: 0 0 var(--pp-space-2);
 }

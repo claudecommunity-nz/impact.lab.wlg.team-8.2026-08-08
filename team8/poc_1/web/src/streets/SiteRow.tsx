@@ -12,7 +12,7 @@
  */
 
 import { memo } from 'react';
-import { DiagnosisChip, TwinDotGlyph, VitalsTrace, glyphAlt } from '../ui';
+import { DiagnosisChip, InfoBadge, TwinDotGlyph, VitalsTrace, glyphAlt } from '../ui';
 import { CAVEAT_LABEL } from '../panels/evidence';
 import { signedPct } from '../copy/strings';
 import { HOURS, type DayModel, type LineView, type SiteSeriesKey, type SiteView } from '../data/derive';
@@ -45,6 +45,13 @@ export interface SiteRowProps {
   model: DayModel;
   index: CountlineIndex;
   refused: boolean;
+  /**
+   * Hour at which the feed's knowledge of this day stops, or undefined when it
+   * ran to midnight. Handed down from the view so every row draws the same
+   * edge — see `dayHorizon`. Given, VitalsTrace stops the actual there and
+   * carries the forecast on dashed, instead of a line that just ends.
+   */
+  horizon: number | undefined;
   expanded: boolean;
   /** the live selection lands somewhere inside this site */
   current: boolean;
@@ -61,6 +68,7 @@ function SiteRowImpl({
   model,
   index,
   refused,
+  horizon,
   expanded,
   current,
   selectedCi,
@@ -120,6 +128,7 @@ function SiteRowImpl({
             actual={site.series[seriesKey].actual}
             expected={site.series[seriesKey].expected}
             gaps={site.gaps}
+            horizon={horizon}
             height={TRACE_VIEW}
             ariaSummary={traceSummary(row, seriesKey, refused)}
           />
@@ -168,13 +177,14 @@ function SiteRowImpl({
             model={model}
             index={index}
             refused={refused}
+            horizon={horizon}
             selected={selectedCi === l.ci}
             onSelect={onSelect}
             onHover={onHover}
           />
         ))}
 
-      {expanded && <CaveatRow site={site} seriesKey={seriesKey} model={model} />}
+      {expanded && <ExcludedRow site={site} seriesKey={seriesKey} model={model} />}
     </>
   );
 }
@@ -190,6 +200,7 @@ function ChildRow({
   model,
   index,
   refused,
+  horizon,
   selected,
   onSelect,
   onHover,
@@ -200,6 +211,7 @@ function ChildRow({
   model: DayModel;
   index: CountlineIndex;
   refused: boolean;
+  horizon: number | undefined;
   selected: boolean;
   onSelect: (ci: number) => void;
   onHover: (ci: number | null) => void;
@@ -261,6 +273,20 @@ function ChildRow({
   const pedDot = dot(ped.viable, ped.delta_pct);
   const vehDot = dot(veh.viable, veh.deltaPct);
 
+  /**
+   * This countline's own caveats, on this countline's own row.
+   *
+   * They used to be dumped under the whole expansion as a stack of prose —
+   * "path left hand side — the feed did not deliver the whole day · only one
+   * mode carries usable volume here" repeated once per member — which read as
+   * a wall of text belonging to nothing in particular, and put the qualifier
+   * three rows away from the number it qualifies. Behind an (i) on the row
+   * itself it is one click from that number and costs no vertical space. The
+   * sentences are unchanged: none of this prose is dropped, only re-anchored.
+   */
+  const name = discriminatorOf(line.name);
+  const caveats = line.record.caveats.map((c) => CAVEAT_LABEL[c] ?? c);
+
   return (
     <tr
       role="row"
@@ -274,13 +300,29 @@ function ChildRow({
     >
       <td role="cell" className="pp-st__c-indent" />
       <td role="cell" className="pp-st__c-name pp-t-caption" title={line.name}>
-        {discriminatorOf(line.name)}
+        <span className="pp-st__child-name">{name}</span>
+        {caveats.length > 0 && (
+          // The row itself selects a countline on click; the badge must not.
+          // Only `click` is stopped — InfoBadge dismisses on document
+          // `pointerdown`, which still reaches it.
+          <span className="pp-st__caveat" onClick={(e) => e.stopPropagation()}>
+            <InfoBadge label={`Caveats for ${name}`} width={280}>
+              <p className="pp-t-label pp-c-secondary">{line.name}</p>
+              <ul className="pp-st__caveat-list pp-t-caption">
+                {caveats.map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+              </ul>
+            </InfoBadge>
+          </span>
+        )}
       </td>
       <td role="cell" className="pp-st__c-trace">
         <VitalsTrace
           actual={series.actual}
           expected={series.expected}
           gaps={gaps}
+          horizon={horizon}
           height={TRACE_VIEW_CHILD}
           ariaSummary={`${line.name}. ${hoursReported} of 24 hours reported. ${
             expSum <= 0 ? 'No expected line — no comparable history.' : `Change ${label}.`
@@ -337,10 +379,15 @@ function shortDate(iso: string): string {
 }
 
 /**
- * Why the parent reads `2/3`, and what each member is carrying. Without this
- * the countline fraction is a mystery, which is the same as hiding it.
+ * Why the parent reads `2/3`. Without this the countline fraction is a mystery,
+ * which is the same as hiding it.
+ *
+ * This is the ONE statement about the site as a whole, so it stays as prose.
+ * The per-member caveats that used to be stacked underneath it now sit on the
+ * member rows themselves, behind an (i) — see ChildRow. Three lines of repeated
+ * prose under the rows read as a footnote nobody attributes to a row.
  */
-function CaveatRow({
+function ExcludedRow({
   site,
   seriesKey,
   model,
@@ -355,26 +402,16 @@ function CaveatRow({
     for (let h = 0; h < HOURS; h++) sum += s.expected[h];
     return sum <= 0;
   });
-  const caveats = site.members
-    .map((l) => ({ name: discriminatorOf(l.name), text: l.record.caveats.map((c) => CAVEAT_LABEL[c] ?? c) }))
-    .filter((c) => c.text.length > 0);
 
-  if (excluded.length === 0 && caveats.length === 0) return null;
+  if (excluded.length === 0) return null;
   return (
     <tr role="row" className="pp-st__row pp-st__row--notes">
       <td role="cell" className="pp-st__notes pp-t-caption pp-c-secondary">
-        {excluded.length > 0 && (
-          <p>
-            Excluded from both sums ({excluded.length} of {site.members.length}): no baseline for{' '}
-            {excluded.map((l) => discriminatorOf(l.name)).join(', ')}. Observed and expected always
-            cover the same members and the same hours.
-          </p>
-        )}
-        {caveats.map((c) => (
-          <p key={c.name}>
-            {c.name} — {c.text.join(' · ')}
-          </p>
-        ))}
+        <p>
+          Excluded from both sums ({excluded.length} of {site.members.length}): no baseline for{' '}
+          {excluded.map((l) => discriminatorOf(l.name)).join(', ')}. Observed and expected always
+          cover the same members and the same hours.
+        </p>
       </td>
     </tr>
   );

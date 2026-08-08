@@ -1,0 +1,109 @@
+/* The feed layer's two cards. Colour comes only from the tokens in
+   theme/palettes.ts — no literal in this file, by house rule. */
+
+/* --- the compounding read ---------------------------------------------- */
+.pp-area__lead {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-left: var(--pp-space-2);
+  /* A rule in the direction's colour, not a filled tint: a filled panel reads
+     as an alert state, and this is a reading, not an alarm. */
+  border-left: 2px solid rgb(var(--pp-color-sem-neutral-zero));
+}
+.pp-area__lead[data-dir='up'] {
+  border-left-color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-area__lead[data-dir='down'] {
+  border-left-color: rgb(var(--pp-color-sem-deficit));
+}
+/* Figure then zone, baseline-aligned on one row. */
+.pp-area__claim {
+  display: flex;
+  gap: var(--pp-space-2);
+  align-items: baseline;
+  color: rgb(var(--pp-color-text-primary));
+}
+.pp-area__lead[data-dir='up'] .pp-area__claim > :first-child {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-area__lead[data-dir='down'] .pp-area__claim > :first-child {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-area__lead[data-dir='flat'] .pp-area__claim > :first-child {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+.pp-area {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-1);
+  margin-top: var(--pp-space-2);
+}
+.pp-area__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--pp-space-2);
+  align-items: baseline;
+}
+/* An area with no camera in it is greyed, never hidden. Same treatment as an
+   unjudged edge, because it is the same claim: we cannot see, so we are not
+   calling it. */
+.pp-area__row[data-judged='false'] {
+  opacity: 0.62;
+}
+.pp-area__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.pp-area__name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pp-area__dev[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-area__dev[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-area__dev[data-dir='flat'],
+.pp-area__dev[data-dir='none'] {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+/* --- the feed roster ---------------------------------------------------- */
+.pp-roster {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+}
+.pp-roster__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pp-roster__head {
+  display: flex;
+  gap: var(--pp-space-2);
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+.pp-roster__tag {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-roster__tag[data-status='connected'] {
+  color: rgb(var(--pp-color-status-ok));
+}
+.pp-roster__tag[data-status='hand-entered'] {
+  color: rgb(var(--pp-color-status-provisional));
+}
+/* A declared-but-unconnected adapter is a gap, not an error. Warn, not alert. */
+.pp-roster__tag[data-status='stub'] {
+  color: rgb(var(--pp-color-status-warn));
+}

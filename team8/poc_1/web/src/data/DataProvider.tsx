@@ -7,8 +7,23 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useAppState } from '../state/app';
 import { buildDayModel, type DayModel } from './derive';
-import { loadContext, loadCountlines, loadDay, loadManifest, loadVitals } from './load';
-import type { ContextFile, CountlineIndex, Manifest, VitalsFile } from './types';
+import {
+  loadContext,
+  loadCountlines,
+  loadDay,
+  loadEdges,
+  loadManifest,
+  loadVitals,
+  loadWeek,
+} from './load';
+import type {
+  ContextFile,
+  CountlineIndex,
+  EdgesFile,
+  Manifest,
+  VitalsFile,
+  WeekFile,
+} from './types';
 
 export interface DataValue {
   manifest: Manifest | null;
@@ -16,6 +31,9 @@ export interface DataValue {
   model: DayModel | null;
   context: ContextFile | null;
   vitals: VitalsFile | null;
+  /** Week-scoped, loaded once. Every consumer of the week cursor reads these. */
+  week: WeekFile | null;
+  edges: EdgesFile | null;
   error: string | null;
   loading: boolean;
 }
@@ -29,16 +47,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [model, setModel] = useState<DayModel | null>(null);
   const [context, setContext] = useState<ContextFile | null>(null);
   const [vitals, setVitals] = useState<VitalsFile | null>(null);
+  const [week, setWeek] = useState<WeekFile | null>(null);
+  const [edges, setEdges] = useState<EdgesFile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let live = true;
-    Promise.all([loadManifest(), loadCountlines()])
-      .then(([m, i]) => {
+    Promise.all([loadManifest(), loadCountlines(), loadWeek(), loadEdges()])
+      .then(([m, i, w, e]) => {
         if (!live) return;
         setManifest(m);
         setIndex(i);
+        setWeek(w);
+        setEdges(e);
       })
       .catch((e: Error) => live && setError(e.message));
     return () => {
@@ -70,8 +92,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [date, index, manifest]);
 
   const value = useMemo<DataValue>(
-    () => ({ manifest, index, model, context, vitals, error, loading }),
-    [manifest, index, model, context, vitals, error, loading],
+    () => ({ manifest, index, model, context, vitals, week, edges, error, loading }),
+    [manifest, index, model, context, vitals, week, edges, error, loading],
   );
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }

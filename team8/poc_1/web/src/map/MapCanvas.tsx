@@ -1,73 +1,110 @@
 /**
  * The instrument. MapLibre draws a knocked-back basemap; deck.gl draws the
- * network on top and owns interaction (so picking works), pushing its view
- * state back into MapLibre each frame.
+ * street network on top and owns interaction (so picking works), pushing its
+ * view state back into MapLibre each frame.
  *
- * Two clocks, and that separation is the whole performance story:
- *   Clock A — playback. Advances the hour. Crosses into React 24 times per
- *             playthrough, never more.
- *   Clock B — the pulse. 60 fps, lives entirely in a ref, never touches React.
- *             It keeps breathing while a panel opens or the app is paused.
+ * ONE clock now, not two. The second clock was the cardiac pulse, and it existed
+ * to make 3D columns breathe; with the columns gone there is nothing for a beat
+ * to ride that would not be a lie — line weight is carrying a flow figure, and a
+ * number that throbs is a number you cannot read off the screen. What is left is
+ * playback: it advances the hour and crosses into React 24 times per
+ * playthrough, never more.
  */
 
-import { useEffect, useRef } from 'react';
-import {
-  AmbientLight,
-  Deck,
-  DirectionalLight,
-  LightingEffect,
-  MapView,
-  type Layer,
-  type MapViewState,
-} from '@deck.gl/core';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Deck, MapView, type Layer, type MapViewState } from '@deck.gl/core';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { useTheme } from '../theme/ThemeProvider';
 import { useAppState, useDispatch, useSelection } from '../state/app';
 import { useData } from '../data/DataProvider';
-import { RINGS, type DayModel, type SiteView } from '../data/derive';
-import { pulse } from '../theme/foundations';
+import type { DayModel, SiteView } from '../data/derive';
+import { rampColor, cssRgb } from '../theme/color';
+import { thresholds } from '../theme/foundations';
+import { signedPct } from '../copy/strings';
 import { loadGeoJson, type GeoJsonLike } from '../data/load';
-import type { GisLayerMeta, LayerId } from '../data/types';
-import { buildLayers, type LayerCtx } from './layers';
-import { REDUCED_MOTION_BEAT, SUPPRESSED_BEAT, easeCardiac, prefersReducedMotion } from './cardiac';
+import { dataUrl } from '../data/dataUrl';
+import { sampleAlongPath, type HeatPoint, type RoadBase } from './heat';
+
+/**
+ * Heat points, memoised on (rows, series, hour).
+ *
+ * Rebuilt on the hour boundary — 24 times a playthrough — not on each of the 60
+ * frames in between. Sampling ~3,400 points every frame would cost more than the
+ * whole rest of the layer stack.
+ */
+let heatCache: {
+  rows: unknown;
+  series: string;
+  hour: number;
+  points: HeatPoint[];
+} | null = null;
+
+function heatFor(
+  rows: EdgeRow[],
+  series: string,
+  weekHour: number,
+  confirmedHours: number,
+): HeatPoint[] {
+  if (
+    heatCache &&
+    heatCache.rows === rows &&
+    heatCache.series === series &&
+    heatCache.hour === weekHour
+  ) {
+    return heatCache.points;
+  }
+  const points: HeatPoint[] = [];
+  // Past the T+1 horizon there is no actual, so there is no heat. A forecast
+  // must never render as a measurement.
+  if (weekHour < confirmedHours) {
+    for (const r of rows) {
+      // `flow` is the flat measured series; `dev` is the per-series one. Heat is
+      // WHERE PEOPLE ARE, so it rides volume — deviation is already the edge
+      // colour underneath and does not need saying twice.
+      const flow = r.edge.flow?.[weekHour];
+      if (flow == null || flow <= 0) continue;
+      points.push(...sampleAlongPath(r.path, flow));
+    }
+  }
+  heatCache = { rows, series, hour: weekHour, points };
+  return points;
+}
+import type { Edge, GisLayerMeta, LayerId } from '../data/types';
+import { edgeSeriesFor, weekSeriesFor } from '../week/model';
+import { buildLayers, edgeRows, isJudgedEdge, type EdgeRow, type LayerCtx } from './layers';
 import { MapTooltip } from './MapTooltip';
 import './map.css';
 
 /**
- * Bearing 90 — east up — is measured, not taste. Simulated over the real 118
- * site positions, cross-place occlusion is 5.5% at bearing 90 against 15.3%
- * north-up, because PCA on the 66 CBD sites gives a principal axis at bearing
- * 0.4° with 2.0 anisotropy: Wellington's sensor network IS a north–south
- * ribbon, so north-up looks straight down it and stacks Courtenay Place in
- * front of Lambton Quay. East-up lays the ribbon across the viewport width and
- * puts the harbour — empty, no basemap clutter — behind the CBD columns.
- * The cost is that north points left, which the compass in the chrome pays for.
+ * North up, flat. Bearing 90 — east up — was measured, not taste: it cut
+ * cross-place occlusion from 15.3% to 5.5% because Wellington's sensor network
+ * is a north–south ribbon. That argument was entirely about COLUMNS occluding
+ * each other. Without them it buys nothing and costs every viewer a mental
+ * rotation before they can match the map to a street they know.
  *
- * Pitch 48 is the knee: occlusion runs 0% / 3.0% / 5.5% / 7.6% at 0 / 25 / 48 /
- * 65, while height legibility rises fast. Capped at 55 because the CARTO raster
- * basemap smears at the horizon beyond it.
+ * Pitch 0 and maxPitch 0: this is a 2D edge map. A pitched camera foreshortens
+ * the far half of the network, which would make line weight — the flow channel —
+ * a function of where the street happens to sit on screen.
+ *
+ * The framing is deliberately NOT a fit-to-data, and this was measured. The
+ * edges span Johnsonville to Island Bay — 20 km, which fits at z10.4; the median
+ * edge is 137 m, which is EIGHT PIXELS there. Fitting the network turns it into
+ * a field of dots and throws away the one thing paths buy over points, which is
+ * that a line has a direction you can follow along a street you know. z13 puts
+ * the median edge at 18 px and the CBD reads as a street map.
+ *
+ * The cost is honest and stated in the legend: the network continues past this
+ * frame. The map pans, and Streets is the full inventory of all 147.
  */
 const INITIAL_VIEW: MapViewState = {
-  longitude: 174.7790,
-  latitude: -41.2905,
-  zoom: 13.1,
-  pitch: 48,
-  bearing: 90,
-  maxPitch: 55,
+  longitude: 174.7815,
+  latitude: -41.2935,
+  zoom: 13.0,
+  pitch: 0,
+  bearing: 0,
+  maxPitch: 0,
 };
-
-/**
- * deck.gl's default lighting darkens the side faces enough that a −25% and a
- * −55% column can land on the same rendered colour — which would put the
- * lighting model into the measurement channel. 0.82/0.38 gives just enough form
- * to read the box while keeping every face within a ramp step of its true
- * value. The cases opt out entirely (`material: false`).
- */
-const LIGHTING = new LightingEffect({
-  ambient: new AmbientLight({ intensity: 0.82 }),
-  dir: new DirectionalLight({ intensity: 0.38, direction: [-1, -0.4, -1] }),
-});
 
 /** manifest gis ids → the toggle ids the UI speaks */
 const GIS_BY_TOGGLE: Partial<Record<LayerId, string>> = {
@@ -77,34 +114,48 @@ const GIS_BY_TOGGLE: Partial<Record<LayerId, string>> = {
   hubs: 'community-emergency-hubs',
 };
 
-/** "Thu 23 Oct 2025" — short enough for the corner chip, unambiguous anyway. */
-const shortDate = (iso: string): string =>
-  new Date(`${iso}T00:00:00`).toLocaleDateString('en-NZ', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-
 /**
- * The map selects a SITE now, but selection state is still keyed by countline
- * index and every panel reads `byCi`. Rather than fork the key type underneath
- * the panels, a site resolves to its busiest counted member on the way in and
- * back through `siteOfCi` on the way out — two map lookups, and nothing
- * downstream has to know the map changed scale.
+ * Selection is still keyed by countline index downstream — every panel reads
+ * `byCi`. An edge resolves to the busiest counted member of its first
+ * contributing camera on the way in, so clicking a street still fills the
+ * selection panel and nothing downstream has to learn that the map changed
+ * scale from a point to a line.
  */
 function representativeCi(site: SiteView): number {
   const pool = site.counted.length ? site.counted : site.members;
   return pool.reduce((best, l) => (l.record.exp > best.record.exp ? l : best), pool[0]).ci;
 }
 
-const siteOfCi = (model: DayModel, ci: number | null): string | null =>
-  ci == null ? null : (model.siteOfCi.get(ci) ?? null);
+/** Every camera site that fed this edge, in the day model. Missing ones are
+ *  dropped rather than faked: a site can contribute to the week artefact and be
+ *  absent from a particular day's file. */
+function sitesOfEdge(model: DayModel | null, edge: Edge | null): SiteView[] {
+  if (!model || !edge) return [];
+  return edge.sensor_sites
+    .map((id) => model.bySiteId.get(String(id)))
+    .filter((s): s is SiteView => !!s);
+}
 
-const ciOfSite = (model: DayModel, siteId: string | null): number | null => {
-  const site = siteId == null ? undefined : model.bySiteId.get(siteId);
-  return site ? representativeCi(site) : null;
-};
+const nz = (v: number) => Math.round(v).toLocaleString('en-NZ');
+
+/**
+ * The citywide headline has to use the SAME dead zone the map's colour ramp
+ * does, or the sentence and the picture disagree: a −0.4% hour rendered
+ * "−0%" beside a map on which every edge under 8% is deliberately flat, which
+ * reads as a broken stat next to a broken map. Under the dead zone the honest
+ * word is the one the ramp is already saying.
+ */
+function cityText(dev: number | null): string {
+  if (dev == null) return '—';
+  return Math.abs(dev) < thresholds.deadZonePct
+    ? 'on forecast'
+    : `${signedPct(dev)} against forecast`;
+}
+
+/** The stops the legend draws. Ends are the ramp's own display clamp; the middle
+ *  is the dead zone, which is a rendered state and therefore has to be in the
+ *  key or half the map reads as broken. */
+const RAMP_STOPS = [-100, -60, -30, -12, 0, 12, 30, 50] as const;
 
 export function MapCanvas() {
   const mapDiv = useRef<HTMLDivElement>(null);
@@ -114,17 +165,95 @@ export function MapCanvas() {
   const mapRef = useRef<maplibregl.Map | null>(null);
   const viewRef = useRef<MapViewState>({ ...INITIAL_VIEW });
   const gisRef = useRef<Partial<Record<LayerId, GeoJsonLike>>>({});
+  // The cold base: every street in the city. ~0.5 MB gzipped, fetched once and
+  // never invalidated — the road network does not change during a demo.
+  const roadBaseRef = useRef<RoadBase | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    fetch(dataUrl('data/gis/road-base.json'))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: RoadBase | null) => {
+        if (live && d?.paths?.length) roadBaseRef.current = d;
+      })
+      // A missing cold base must never take the map down; you just lose the
+      // context layer and the lit edges still draw.
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const { palette } = useTheme();
   const state = useAppState();
   const dispatch = useDispatch();
   const selection = useSelection();
-  const { model, manifest } = useData();
+  const { model, manifest, week, edges } = useData();
+
+  // The pick is an EDGE now. It is React state and not a ref because the readout
+  // renders from it — but it changes at human speed, and the render it causes
+  // does not touch the rAF loop, which reads everything through `live`.
+  const [hoveredEdge, setHoveredEdge] = useState<Edge | null>(null);
+  const [selectedEdge, setSelectedEdge] = useState<Edge | null>(null);
+
+  // Flattened once per artefact load. 147 edges become 353 polylines; deck.gl
+  // regenerates its attribute buffers whenever `data` changes identity, so this
+  // must not be rebuilt per frame.
+  const allRows = useMemo(() => (edges ? edgeRows(edges.edges) : []), [edges]);
+
+  /**
+   * The edge artefact covers ONE week. The unlisted replay route drives `date`
+   * to October 2025 while the week cursor stays where it was, so without this
+   * gate the map drew week 32 of 2026 under a 23 Oct 2025 headline — a false
+   * temporal register, which is the one failure mode this codebase treats as
+   * disqualifying. On Week and Streets the date is always inside the week, so
+   * this is a no-op there.
+   */
+  const weekStart = week?.week_start ?? edges?.week_start ?? null;
+  const weekEnd = week?.week_end ?? null;
+  const inWeek =
+    weekStart != null && weekEnd != null && state.date >= weekStart && state.date <= weekEnd;
+  const rows = inWeek ? allRows : [];
+
+  const series = edgeSeriesFor(state.mode);
+  const confirmedHours = edges?.confirmed_hours ?? 0;
+  const markedSites = useMemo(
+    () => sitesOfEdge(model, selectedEdge ?? hoveredEdge),
+    [model, selectedEdge, hoveredEdge],
+  );
 
   // Everything the rAF loop needs, refreshed on every React render. The loop
   // itself is created once and never torn down.
-  const live = useRef({ state, palette, model, selection, dispatch });
-  live.current = { state, palette, model, selection, dispatch };
+  const live = useRef({
+    state,
+    palette,
+    model,
+    dispatch,
+    rows,
+    series,
+    confirmedHours,
+    hoveredEdge,
+    selectedEdge,
+    markedSites,
+    setHoveredEdge,
+    setSelectedEdge,
+    selection,
+  });
+  live.current = {
+    state,
+    palette,
+    model,
+    dispatch,
+    rows,
+    series,
+    confirmedHours,
+    hoveredEdge,
+    selectedEdge,
+    markedSites,
+    setHoveredEdge,
+    setSelectedEdge,
+    selection,
+  };
 
   /* --- basemap + deck, created once -------------------------------- */
   useEffect(() => {
@@ -154,12 +283,11 @@ export function MapCanvas() {
       canvas: canvasRef.current,
       views: new MapView({ id: 'map' }),
       initialViewState: INITIAL_VIEW,
-      // Rotating out of an occlusion is the only recovery for the ~5% of
-      // columns a nearer one hides, and it is the gesture that sells 3D in a
-      // four-minute demo. It is also what makes the bearing-derived pair offset
-      // and square angle in layers.ts mandatory rather than decorative.
-      controller: { dragRotate: true },
-      effects: [LIGHTING],
+      // Rotation stays available on ctrl/right-drag, and touchRotate is on
+      // because deck defaults it OFF — on a trackpad-only demo machine the
+      // two-finger gesture was the only rotation anyone would reach for. The
+      // default is north-up, so the compass is the way back.
+      controller: { dragRotate: true, touchRotate: true },
       layers: [],
       getTooltip: () => null,
       onViewStateChange: ({ viewState }) => {
@@ -184,6 +312,16 @@ export function MapCanvas() {
     // Created once and never torn down. The palette's basemap tiles are swapped
     // in place by the effect below rather than by rebuilding the map.
   }, []);
+
+  /* --- Esc clears the pick -------------------------------------------- *
+   * The shell owns the Escape key and clears the countline selection, which is
+   * what every panel reads. The map's edge pick is a second selection channel
+   * and was not listening, so Esc emptied the rail and left the street lit and
+   * its readout up. One-way sync: the countline selection is the authority. */
+  const { selected: selectedCi } = selection;
+  useEffect(() => {
+    if (selectedCi == null) setSelectedEdge(null);
+  }, [selectedCi]);
 
   /* --- palette swap repaints the basemap without rebuilding the map --- */
   useEffect(() => {
@@ -214,79 +352,74 @@ export function MapCanvas() {
     }
   }, [manifest, state.layers]);
 
-  /* --- the two clocks ------------------------------------------------- */
+  /* --- the clock ------------------------------------------------------- */
   useEffect(() => {
     let raf = 0;
     let last = performance.now();
-    let phase = 0;
     let hourAccum = 0;
     let bearingShown = NaN;
-    const reduced = prefersReducedMotion();
 
     const frame = (now: number) => {
       raf = requestAnimationFrame(frame);
       const dt = Math.min(120, now - last);
       last = now;
-      const { state: s, palette: p, model: m, selection: sel, dispatch: dis } = live.current;
+      const l = live.current;
+      const s = l.state;
       const deck = deckRef.current;
-      if (!deck || !m) return;
+      if (!deck) return;
 
-      // Clock A — playback. The only thing that crosses into React.
+      // Playback. The only thing in here that crosses into React.
       const msPerHour = (s.secondsPerDay * 1000) / 24;
       if (s.playing && !s.scrubbing) {
         hourAccum += dt;
         if (hourAccum >= msPerHour) {
           hourAccum -= msPerHour;
-          dis({ type: 'TICK' });
+          l.dispatch({ type: 'TICK' });
         }
       } else {
         hourAccum = 0;
       }
 
-      // Clock B — the pulse. Never crosses the React boundary.
-      const bpm = m.bpm[s.hour] || pulse.bpmMin;
-      const period = 60000 / bpm;
-      phase = (phase + dt / period) % 1;
-
-      const ringBeats: number[] = [];
-      for (let r = 0; r < RINGS; r++) {
-        if (m.refused) ringBeats.push(SUPPRESSED_BEAT);
-        else if (reduced) ringBeats.push(REDUCED_MOTION_BEAT);
-        else {
-          const offset = (pulse.propagationMs / period) * (r / Math.max(1, RINGS - 1));
-          ringBeats.push(easeCardiac(phase - offset + 1));
-        }
-      }
-
       const view = viewRef.current;
       const ctx: LayerCtx = {
-        model: m,
+        rows: l.rows,
+        weekHour: s.weekHour,
+        confirmedHours: l.confirmedHours,
+        series: l.series,
+        palette: l.palette,
+        model: l.model,
         hour: s.hour,
-        beat: ringBeats[0],
-        ringBeats,
-        palette: p,
-        ghost: s.ghost,
+        refused: l.model?.refused ?? false,
         showCoverage: s.showCoverage,
-        showDiagnosis: s.layers.diagnosis,
-        refused: m.refused,
-        mode: s.mode,
-        selectedSite: siteOfCi(m, sel.selected),
-        hoveredSite: siteOfCi(m, sel.hovered),
-        zoom: view.zoom,
-        bearing: view.bearing ?? 0,
-        latitude: view.latitude,
+        hoveredEdge: l.hoveredEdge?.id ?? null,
+        selectedEdge: l.selectedEdge?.id ?? null,
+        markedSites: l.markedSites,
         gis: gisRef.current,
         layers: s.layers,
-        onHover: (siteId) => sel.setHovered(ciOfSite(m, siteId)),
-        onClick: (siteId) => sel.setSelected(ciOfSite(m, siteId)),
+        roadBase: roadBaseRef.current,
+        heatPoints: heatFor(l.rows, l.series, s.weekHour, l.confirmedHours),
+        // Always on for now. A toggle needs a new LayerId, and the nav is being
+        // edited concurrently — not worth the merge on build day.
+        showHeat: true,
+        onHover: (edge) => {
+          if ((l.hoveredEdge?.id ?? null) === (edge?.id ?? null)) return;
+          l.setHoveredEdge(edge);
+        },
+        onClick: (edge) => {
+          l.setSelectedEdge(edge);
+          // The panels downstream still speak countline. Bridge, do not fork.
+          const site = sitesOfEdge(l.model, edge)[0];
+          l.selection.setSelected(site ? representativeCi(site) : null);
+        },
       };
 
-      // The needle is the price of bearing 90. Written straight to the DOM and
-      // only when it moves — a compass in React state would put a float from a
-      // drag gesture through the reducer.
-      if (compassRef.current && bearingShown !== ctx.bearing) {
-        bearingShown = ctx.bearing;
-        compassRef.current.style.transform = `rotate(${-ctx.bearing}deg)`;
+      // The needle. Written straight to the DOM and only when it moves — a
+      // compass in React state would put a float from a drag gesture through
+      // the reducer, sixty times a second.
+      const bearing = view.bearing ?? 0;
+      if (compassRef.current && bearingShown !== bearing) {
+        bearingShown = bearing;
+        compassRef.current.style.transform = `rotate(${-bearing}deg)`;
       }
 
       deck.setProps({
@@ -299,113 +432,204 @@ export function MapCanvas() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  /**
+   * The compass was decoration for the whole build — a div inside a
+   * pointer-events: none bar, so a viewer who had rotated the map had no way
+   * back except guessing the drag. It writes viewRef directly rather than going
+   * through React: the rAF loop pushes viewRef into deck every frame, so the
+   * next frame picks the change up. MapLibre has to be told separately, because
+   * it only follows deck via onViewStateChange and that fires on gestures, not
+   * on us setting the view state ourselves.
+   */
+  const resetNorth = () => {
+    const v = { ...viewRef.current, bearing: 0 };
+    viewRef.current = v;
+    mapRef.current?.jumpTo({
+      center: [v.longitude, v.latitude],
+      zoom: v.zoom,
+      bearing: 0,
+      pitch: v.pitch ?? 0,
+    });
+  };
+
+  /* --- the two overlays ------------------------------------------------- */
+  const day = week?.days[state.dayOffset];
+  const at = day ? `${day.short} ${String(state.hour).padStart(2, '0')}:00` : '—';
+  const confirmed = state.weekHour < confirmedHours;
+
+  // Counted from what is actually on screen, never typed. `scored` is the honest
+  // denominator for anything the headline claims: an edge with one sensor, or a
+  // forecast under 5/hr, carries no percentage and is not in it.
+  let scored = 0;
+  let below = 0;
+  let above = 0;
+  if (confirmed && edges) {
+    for (const e of edges.edges) {
+      if (!isJudgedEdge(e)) continue;
+      const d = e.dev[series]?.[state.weekHour];
+      if (d == null) continue;
+      scored++;
+      if (d <= -thresholds.deadZonePct) below++;
+      else if (d >= thresholds.deadZonePct) above++;
+    }
+  }
+
+  // The citywide figure is the WEEK artefact's own, not a sum of edges: edges
+  // cover 147 streets of a whole city, and summing them would quietly redefine
+  // "citywide" as "the streets we happen to watch".
+  const wSeries = weekSeriesFor(state.mode);
+  const cityActual = week?.actual[wSeries]?.[state.weekHour] ?? null;
+  const cityForecast = week?.forecast[wSeries]?.[state.weekHour] ?? null;
+  const cityDev =
+    cityActual != null && cityForecast ? ((cityActual - cityForecast) / cityForecast) * 100 : null;
+
+  const refused = model?.refused ?? false;
+
   return (
-    <div className="pp-map" data-refused={model?.refused ?? false}>
+    <div className="pp-map" data-refused={refused}>
       <div
         className="pp-map__base"
         ref={mapDiv}
         style={{ opacity: palette.basemap.opacity, filter: palette.basemap.filter }}
       />
       <canvas className="pp-map__deck" ref={canvasRef} />
-      {model?.refused && <div className="pp-map__hatch" aria-hidden="true" />}
-      <MapTooltip />
-      {/* Persistent, and deliberately in the corner a screenshot crop keeps.
-          A pulsing map with no date on it reads as a live situation report. */}
-      <div className="pp-map__replay pp-t-label">
-        <span className="pp-map__replay-tag">Replay</span>
-        <span>
-          {model ? `${shortDate(model.date)} · ${String(state.hour).padStart(2, '0')}:00` : '—'}
-        </span>
-        <span className="pp-map__replay-not-live">not live</span>
-      </div>
-      {/* Compass and legend ride one bar in the free strip between the floating
-          panels — the map's corners all belong to something else now.
+      {refused && <div className="pp-map__hatch" aria-hidden="true" />}
 
-          The legend is load-bearing, not decoration: half the map renders
-          neutral once the noise floor is applied and the suburbs are stubs,
-          both of which are correct and both of which read as "broken" to
-          anyone who has not been told what the two channels are. But the
-          prose version of it was four lines wide enough to sit on top of the
-          CBD columns at the default view — a legend that occludes the data it
-          explains. So the always-visible part is now the drawn key plus one
-          clause per channel, and the caveats that only matter once you are
-          reading a specific column moved behind the disclosure. */}
-      <div className="pp-map__chrome">
-        {/* North is to the left at the default bearing. An 8-point occlusion
-            penalty is worse than a rotated compass, so the compass pays. */}
-        <div className="pp-map__compass" aria-label="north indicator">
+      {/* ONE top-left column, stamp then readout. They were two independently
+          positioned boxes and the readout was pinned to the bottom of the map,
+          where it landed on the legend bar; stacking them in a flow column
+          makes non-intersection structural instead of a pair of magic offsets
+          that go stale the moment either box changes height. */}
+      <div className="pp-map__tl">
+        {/* Deliberately in the corner a screenshot crop keeps: a coloured map
+            with no date and no "not live" on it reads as a live situation
+            report. */}
+        <div className="pp-map__stamp">
+          <div className="pp-map__stamp-head pp-t-label">
+            <span>Flow rate vs forecast</span>
+            <span className="pp-map__stamp-at pp-t-mono-sm">{at}</span>
+          </div>
+          <p className="pp-map__stamp-line pp-t-caption">
+            {!inWeek ? (
+              <>
+                No flow layer for {state.date}. The edge artefact covers {weekStart ?? '—'} to{' '}
+                {weekEnd ?? '—'} only — the map is showing context layers, not a blank city.
+              </>
+            ) : refused ? (
+              'This day is not being assessed — coverage was too poor to look at. No edge is coloured.'
+            ) : !confirmed ? (
+              <>
+                Beyond the confirmed feed. Lines are drawn at <strong>forecast</strong> weight and
+                carry no deviation colour.
+              </>
+            ) : (
+              <>
+                Citywide <strong>{cityText(cityDev)}</strong> this hour. {scored} of{' '}
+                {edges?.n_edges ?? 0} edges scored — <strong>{below}</strong> below,{' '}
+                <strong>{above}</strong> above.
+              </>
+            )}
+          </p>
+          <span className="pp-map__stamp-tag pp-t-caption">
+            T+1 feed · not live · deviation is measured, cause is not
+          </span>
+        </div>
+
+        <MapTooltip
+          edge={hoveredEdge ?? selectedEdge}
+          weekHour={state.weekHour}
+          series={series}
+          confirmed={confirmed}
+          at={at}
+        />
+      </div>
+
+      {/* The key, bottom-left. It was a 767px bar centred on an 832px map — a
+          full-width slab of caption text for what is a key, not content — and
+          its right end ran under the attribution block. Everything here is now
+          a swatch plus two or three words; the sentences it used to carry are
+          in the disclosure, which is where they were already going. */}
+      <div className="pp-map__key">
+        {/* A control, not an ornament: the default is north-up, so the only
+            reason the needle ever moves is that the viewer rotated the map,
+            and the thing showing them they have is also the way back. */}
+        <button
+          type="button"
+          className="pp-map__compass"
+          aria-label="Reset the map to north up"
+          title="Reset to north up"
+          onClick={resetNorth}
+        >
           <svg viewBox="0 0 32 32" ref={compassRef} aria-hidden="true">
             <path d="M16 3.5 L20.6 21 L16 17.4 L11.4 21 Z" />
             <text x="16" y="29.5" textAnchor="middle">
               N
             </text>
           </svg>
+        </button>
+
+        <div className="pp-map__ramp" aria-hidden="true">
+          <span>−40</span>
+          <span className="pp-map__ramp-swatches">
+            {RAMP_STOPS.map((v) => (
+              <i key={v} style={{ background: cssRgb(rampColor(palette, v).rgb) }} />
+            ))}
+          </span>
+          <span>+40</span>
         </div>
-        {/* One column, drawn. The gap between the case top and the solid top
-            is the entire encoding, and showing it teaches it faster than the
-            sentence underneath ever did. */}
-        <svg className="pp-map__key" viewBox="0 0 34 40" aria-hidden="true">
-          <rect className="pp-map__key-case" x="8.5" y="6.5" width="17" height="30" rx="1" />
-          <rect className="pp-map__key-solid" x="11" y="24" width="12" height="12" />
-          <path className="pp-map__key-gap" d="M5 7 L5 23.5 M3 7 L7 7 M3 23.5 L7 23.5" />
-        </svg>
-        <div className="pp-map__coverage pp-t-caption">
-          <span>
-            <strong>Height</strong> is volume
-          </span>
-          <span>
-            <strong>Colour</strong> is change against normal
-          </span>
-          {/* The pair glyph, drawn. "Pedestrians left, vehicles right" was
-              ambiguous the moment the camera rotated; a square beside a
-              triangle is not, so the legend shows the two footprints rather
-              than naming two sides. */}
-          <span className="pp-map__pair">
-            <svg viewBox="0 0 40 18" aria-hidden="true">
-              <rect className="pp-map__key-ped" x="3" y="4" width="11" height="11" />
-              <path className="pp-map__key-veh" d="M31 3 L38 15 L24 15 Z" />
-            </svg>
-            people / vehicles
-          </span>
-          <details className="pp-map__more">
-            {/* Both numbers in one string. The moving one (this day) and the
-                fixed one (the network) were on screen simultaneously with the
-                same noun and nothing reconciling them. */}
-            <summary>
-              {model?.nSites ?? '—'} of {manifest?.network.camera_sites ?? '—'} camera sites
-              reported
-            </summary>
-            {/* One wrapper, because the bar is flush to the bottom edge and the
-                disclosure has to open UPWARD — which means one absolutely
-                positioned box, not four stacked on each other. */}
-            <div className="pp-map__more-body">
+        {/* "flat band = on forecast (±8%)" for a swatch the eye has already
+            read as flat. The dead zone is the number worth keeping. */}
+        <span>±{thresholds.deadZonePct}% = flat</span>
+
+        <span>
+          <strong>weight</strong> = flow
+        </span>
+        <span className="pp-map__grey">
+          <i /> unjudged
+        </span>
+        <details className="pp-map__more">
+          <summary>how to read</summary>
+          {/* One wrapper, because the key sits at the bottom edge and the
+              disclosure has to open UPWARD — which means one absolutely
+              positioned box, not four stacked on each other. */}
+          <div className="pp-map__more-body pp-t-caption">
             <p>
-              Full height is 2,400 movements an hour, one linear scale citywide. The gap between
-              the top of the pale case and the top of the solid inside it is the shortfall, to
-              scale.
+              An edge is one WCC road id. Its numbers are <strong>inferred</strong>: each camera's
+              reading is spread along the street it sits on and decays to zero at 300 m. It is not a
+              measurement of the whole stretch, and it is never established cause.
             </p>
             <p>
-              The pale case is the usual hour for that site — an 84-day median, not today's data,
-              so it never takes the colour ramp. An empty case is an hour the feed did not deliver;
-              it is not a reported zero. Colour is dropped under 20/hr, where a percentage is a
-              rounding error.
+              Line weight is movements per hour on a square-root scale, full weight at{' '}
+              <span className="pp-t-mono-sm">1,500/hr</span>. Colour is deviation from this week's
+              forecast for this same hour — not from last week.
             </p>
             <p>
-              Short stubs are a minimum drawn height so a reporting sensor stays visible — read the
-              figure, not the stub. Vehicles are car, bus and LGV. A blank map is unwatched city,
-              not quiet city.
+              Grey means we declined to judge:{' '}
+              {edges ? edges.n_edges - (edges.measured.edges_with_2plus_sensors ?? 0) : '—'} edges
+              have one camera speaking for the whole street, and any edge forecast under 5/hr loses
+              its percentage because a ratio on that denominator is noise.
             </p>
             <p>
-              Height clips at 2,400/hr, so the three busiest pedestrian sites in the CBD draw the
-              same full case. Where it clips, the readout says{' '}
-              <span className="pp-t-mono-sm">2,400+</span> — read the figure there, not the column.
+              Most of Wellington has no sensor on it at all and draws nothing. A blank street is an
+              unwatched street, not a quiet one.
             </p>
-            </div>
-          </details>
-        </div>
+          </div>
+        </details>
       </div>
-      <div className="pp-map__attrib pp-t-caption">
-        Movement: WCC / VivaCity via Pōneke Travel Insights · Basemap {palette.basemap.attribution}
+
+      {/* Provenance, bottom-right. Attribution and coverage are both required
+          on the frame and neither is content, so they sit together at the
+          smallest size that still reads. The site/edge counts moved here from
+          the key's summary: they are what we can see, not how to read it. */}
+      <div className="pp-map__prov">
+        <span>
+          {edges ? nz(edges.n_sites) : '—'} camera sites on {edges?.n_edges ?? '—'} edges ·{' '}
+          {edges?.measured.edges_with_2plus_sensors ?? '—'} judged
+        </span>
+        <span>
+          Movement: WCC / VivaCity via Pōneke Travel Insights · Roads: WCC centrelines · Basemap{' '}
+          {palette.basemap.attribution}
+        </span>
       </div>
     </div>
   );
