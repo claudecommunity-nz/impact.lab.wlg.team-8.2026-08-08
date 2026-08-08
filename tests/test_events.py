@@ -1,4 +1,7 @@
 import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from team8.fetch_data.events import build_snapshot, deduplicate, normalize_row
 
@@ -50,6 +53,30 @@ class TestNormalizeRow(unittest.TestCase):
     def test_rejects_missing_name(self):
         raw = example_row()
         raw["name"] = ""
+        with self.assertRaises(ValueError):
+            normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
+
+    def test_rejects_missing_source_url(self):
+        raw = example_row()
+        raw["source_url"] = ""
+        with self.assertRaises(ValueError):
+            normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
+
+    def test_rejects_invalid_event_type(self):
+        raw = example_row()
+        raw["event_type"] = "parade"
+        with self.assertRaises(ValueError):
+            normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
+
+    def test_rejects_naive_timestamp(self):
+        raw = example_row()
+        raw["start_time_local"] = "2026-09-01T19:30:00"
+        with self.assertRaises(ValueError):
+            normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
+
+    def test_rejects_scale_without_basis(self):
+        raw = example_row()
+        raw["scale_basis"] = None
         with self.assertRaises(ValueError):
             normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
 
@@ -119,29 +146,51 @@ class TestSnapshot(unittest.TestCase):
         with self.assertRaises(ValueError):
             build_snapshot(seed, captured_at="2026-08-08T10:00:00+12:00")
 
-    def test_rejects_missing_source_url(self):
-        raw = example_row()
-        raw["source_url"] = ""
-        with self.assertRaises(ValueError):
-            normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
 
-    def test_rejects_invalid_event_type(self):
-        raw = example_row()
-        raw["event_type"] = "parade"
-        with self.assertRaises(ValueError):
-            normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
+class _FakeContext:
+    def __init__(self, content: bytes):
+        self.content = content
 
-    def test_rejects_naive_timestamp(self):
-        raw = example_row()
-        raw["start_time_local"] = "2026-09-01T19:30:00"
-        with self.assertRaises(ValueError):
-            normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
+    def __enter__(self):
+        return self
 
-    def test_rejects_scale_without_basis(self):
-        raw = example_row()
-        raw["scale_basis"] = None
-        with self.assertRaises(ValueError):
-            normalize_row(raw, captured_at="2026-08-08T10:00:00+12:00")
+    def __exit__(self, exc_type, exc_value, traceback):
+        return False
+
+    def read(self):
+        return self.content
+
+
+class TestSourceCapture(unittest.TestCase):
+    def test_capture_source_writes_safe_path_and_manifest_row(self):
+        from team8.fetch_data.pull_events import capture_source
+
+        source = {
+            "source_id": "venue-calendars",
+            "url": "https://example.test/calendar",
+            "format": "html",
+            "name": "Venue calendars",
+            "coverage": "future",
+            "notes": "test source",
+        }
+        with TemporaryDirectory() as temporary:
+            with patch(
+                "team8.fetch_data.pull_events.urlopen",
+                return_value=_FakeContext(b"<html>events</html>"),
+            ):
+                manifest = capture_source(
+                    source,
+                    captured_at="2026-08-08T10:00:00+12:00",
+                    raw_root=Path(temporary),
+                )
+
+            path = Path(manifest["path"])
+            self.assertTrue(path.exists())
+            self.assertNotIn("/", path.name)
+            self.assertEqual(manifest["source_id"], "venue-calendars")
+            self.assertEqual(manifest["format"], "html")
+            self.assertEqual(manifest["captured_at"], "2026-08-08T10:00:00+12:00")
+            self.assertEqual(path.read_text(), "<html>events</html>")
 
 
 if __name__ == "__main__":
