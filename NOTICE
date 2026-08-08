@@ -1,0 +1,20 @@
+Pōneke Pulse
+Copyright 2026 The Pōneke Pulse contributors
+
+Built for Wellington City Council Emergency Management at Impact Lab
+Wellington, 8 August 2026.
+
+Licensed under the Apache License, Version 2.0. You must retain this notice
+in any redistribution, including derivative works — see section 4(d).
+
+---
+
+The data is NOT covered by the Apache License. It belongs to its publishers
+and licence terms vary per dataset. Check the publisher before republishing
+anything derived from it.
+
+  Movement    Pōneke Travel Insights — Wellington City Council / VivaCity
+  GIS layers  Wellington City Council, Greater Wellington Regional Council,
+              WREMO, GNS Science, NIWA, Wellington Water, MBIE, NZTA
+  Warnings    MetService
+  Basemap     © OpenStreetMap contributors, © CARTO
