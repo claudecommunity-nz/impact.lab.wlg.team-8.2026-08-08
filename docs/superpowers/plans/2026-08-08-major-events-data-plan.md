@@ -6,7 +6,7 @@
 
 **Architecture:** Public source pages and feeds are captured into ignored `data/raw/events/` snapshots. A pure normalizer reads a committed, manually reviewed seed file, validates and deduplicates records, and writes `team8/poc_1/web/public/data/events/major-events.json`. The event build remains a separate command from `poc-data`, so the existing movement demo does not depend on event-source availability.
 
-**Tech Stack:** Python 3.12 standard library plus the repository's existing `requests` dependency; JSON; GTFS ZIP/CSV parsing; `unittest`; `just`.
+**Tech Stack:** Python standard library (`urllib`, JSON and GTFS ZIP/CSV parsing); `unittest`; `just`. The capture helper avoids requiring the full project environment.
 
 ## Global Constraints
 
@@ -217,7 +217,8 @@ Expected: import or attribute failure because `pull_events.py` does not exist.
 
 - [ ] **Step 3: Implement source capture without parsing**
 
-Use `requests.get(..., timeout=60)` with a descriptive User-Agent and `raise_for_status()`.
+Use `urllib.request.Request` and `urllib.request.urlopen(..., timeout=60)` with a
+descriptive User-Agent. Convert HTTP and URL errors into a source-specific failure.
 Write HTML pages as UTF-8 text, PDFs and GTFS ZIPs as bytes, and never execute or
 interpret downloaded content during capture. Use explicit source IDs:
 
