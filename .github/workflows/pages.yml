@@ -1,0 +1,58 @@
+name: Pages
+
+# The web app is fully static: the pipeline artefacts it reads live in
+# web/public/data and are committed, so CI only has to bundle. No Python,
+# no data pull, no secrets.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it mid-publish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+defaults:
+  run:
+    working-directory: team8/poc_1/web
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: team8/poc_1/web/package-lock.json
+
+      - run: npm ci
+
+      # Before the bundle, so a data file that never got committed fails here
+      # with a filename rather than 404ing in front of the judges.
+      - run: npm run check:data
+
+      - run: npm run build
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: team8/poc_1/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
