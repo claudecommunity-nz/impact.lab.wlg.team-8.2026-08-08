@@ -1,0 +1,305 @@
+/*
+ * Areas. Two columns: the alert feed, and the coverage register that says which
+ * footprints the feed could not have alerted on.
+ *
+ * NO COLOUR LITERALS. Every colour is rgb(var(--pp-color-*)).
+ */
+
+/*
+ * The bottom band on this tab is the cursor row without the chart, exactly as
+ * on Streets — so it gets Streets' chrome budget rather than the week's 268px,
+ * which otherwise leaves a third of the screen blank under the feed.
+ *
+ * Declared here rather than in shell.css only to keep this tab inside its own
+ * files while another pass is running over the shell; it belongs beside the
+ * other two route rules in shell.css when the tabs are next tidied.
+ */
+.pp-shell[data-route='areas'] {
+  --pp-chrome-bottom: 92px;
+}
+
+.pp-areas {
+  display: grid;
+  grid-template-columns: 1fr 330px;
+  gap: var(--pp-space-4);
+  align-items: start;
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--pp-space-4) var(--pp-space-5) var(--pp-space-5);
+  background: rgb(var(--pp-color-bg-base));
+  color: rgb(var(--pp-color-text-primary));
+}
+
+.pp-areas__feed {
+  min-width: 0;
+}
+
+.pp-areas__head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pp-space-3);
+  margin-bottom: var(--pp-space-3);
+}
+
+.pp-areas__spacer {
+  flex: 1;
+}
+
+.pp-areas__pop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+}
+
+.pp-areas__filters {
+  display: flex;
+  gap: var(--pp-space-1);
+}
+
+.pp-areas__filter {
+  padding: 5px 10px;
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  background: rgb(var(--pp-color-surface-1));
+  color: rgb(var(--pp-color-text-secondary));
+  cursor: pointer;
+}
+
+.pp-areas__filter:hover {
+  border-color: rgb(var(--pp-color-border-strong) / var(--pp-alpha-border-strong));
+  color: rgb(var(--pp-color-text-primary));
+}
+
+.pp-areas__filter[data-on='true'] {
+  background: rgb(var(--pp-color-surface-3));
+  border-color: rgb(var(--pp-color-border-strong) / var(--pp-alpha-border-strong));
+  color: rgb(var(--pp-color-text-primary));
+}
+
+.pp-areas__empty {
+  padding: var(--pp-space-5);
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  background: rgb(var(--pp-color-surface-1));
+  max-width: 70ch;
+}
+
+.pp-areas__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ------------------------------------------------------------------ alert */
+
+.pp-alert {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 300px;
+  gap: var(--pp-space-5);
+  align-items: start;
+  padding: var(--pp-space-3) var(--pp-space-4);
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  border-left: 4px solid rgb(var(--pp-color-sem-deficit));
+}
+
+.pp-alert[data-dir='up'] {
+  border-left-color: rgb(var(--pp-color-sem-surplus));
+}
+
+.pp-alert__dur {
+  margin-top: var(--pp-space-1);
+}
+
+.pp-alert__state {
+  margin-top: var(--pp-space-1);
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-alert__state[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+
+.pp-alert__claim {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pp-space-2);
+  margin: 0;
+}
+
+.pp-alert__peak {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-alert__peak[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+
+.pp-alert__zone {
+  font-weight: 600;
+}
+
+.pp-alert__sentence {
+  margin: var(--pp-space-1) 0 0;
+  max-width: 62ch;
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+.pp-alert__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--pp-space-1);
+  list-style: none;
+  margin: var(--pp-space-2) 0 var(--pp-space-2);
+  padding: 0;
+}
+
+.pp-alert__chip {
+  padding: 2px 7px;
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  background: rgb(var(--pp-color-surface-2));
+  color: rgb(var(--pp-color-text-secondary));
+}
+
+.pp-alert__body p {
+  margin: 0;
+}
+
+/* The whole point of the tab. An unexplained run reads in the deficit colour
+   because "nothing on file explains this" is the finding, not a caveat. */
+.pp-alert__cause {
+  margin-top: var(--pp-space-2) !important;
+  color: rgb(var(--pp-color-text-primary));
+}
+
+.pp-alert__cause[data-unexplained='true'] {
+  color: rgb(var(--pp-color-sem-deficit-hot));
+}
+
+.pp-alert__badge {
+  margin-left: var(--pp-space-2);
+  padding: 1px 6px;
+  border: 1px solid rgb(var(--pp-color-status-provisional));
+  color: rgb(var(--pp-color-status-provisional));
+}
+
+/* -------------------------------------------------------------------- bar */
+
+.pp-alert__track {
+  position: relative;
+  height: 12px;
+  margin-top: var(--pp-space-2);
+  background: rgb(var(--pp-color-surface-3));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+
+.pp-alert__centre {
+  position: absolute;
+  inset: 0 auto;
+  left: 50%;
+  width: 1px;
+  background: rgb(var(--pp-color-border-strong) / var(--pp-alpha-border-strong));
+}
+
+.pp-alert__span {
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  background: rgb(var(--pp-color-sem-deficit) / 0.5);
+}
+.pp-alert__span[data-dir='up'] {
+  background: rgb(var(--pp-color-sem-surplus) / 0.5);
+}
+
+.pp-alert__marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: rgb(var(--pp-color-sem-deficit));
+}
+.pp-alert__marker[data-dir='up'] {
+  background: rgb(var(--pp-color-sem-surplus));
+}
+
+.pp-alert__scale {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--pp-space-1);
+}
+
+.pp-alert__range {
+  margin-top: var(--pp-space-2);
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-alert__range[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+
+/* --------------------------------------------------------------- coverage */
+
+.pp-areas__coverage {
+  position: sticky;
+  top: 0;
+  padding: var(--pp-space-4);
+  background: rgb(var(--pp-color-surface-1));
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+
+.pp-areas__coverage-sub {
+  margin: 2px 0 0;
+  text-transform: uppercase;
+}
+
+.pp-cov {
+  list-style: none;
+  margin: var(--pp-space-3) 0 0;
+  padding: 0;
+}
+
+.pp-cov__row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-2) 0;
+  border-bottom: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+
+.pp-cov__dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  background: rgb(var(--pp-color-sem-pulse-healthy));
+}
+.pp-cov__dot[data-state='unwatched'] {
+  background: rgb(var(--pp-color-sem-unknown));
+}
+.pp-cov__dot[data-state='thin'] {
+  background: rgb(var(--pp-color-status-provisional));
+}
+
+.pp-cov__names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-cov__row[data-state='unwatched'] .pp-cov__name {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+.pp-cov__dev[data-dir='down'] {
+  color: rgb(var(--pp-color-sem-deficit));
+}
+.pp-cov__dev[data-dir='up'] {
+  color: rgb(var(--pp-color-sem-surplus));
+}
+.pp-cov__dev[data-dir='none'] {
+  color: rgb(var(--pp-color-text-muted));
+}
+
+.pp-areas__foot {
+  margin: var(--pp-space-3) 0 0;
+}

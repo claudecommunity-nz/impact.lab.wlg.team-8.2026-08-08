@@ -3,6 +3,7 @@ import { AppProviders, useAppState, useDispatch, useSelection } from './state/ap
 import { DataProvider, useData } from './data/DataProvider';
 import { MapCanvas } from './map/MapCanvas';
 import { StreetsView } from './streets/StreetsView';
+import { AreasView } from './areas';
 import { WeekView, WeekChart } from './week';
 import { TopBar } from './nav/TopBar';
 import { ControlBar } from './nav/ControlBar';
@@ -172,6 +173,10 @@ function Layout({ route }: { route: Route }) {
         <main className="pp-shell__stage pp-shell__stage--table">
           <StreetsView />
         </main>
+      ) : route === 'areas' ? (
+        <main className="pp-shell__stage pp-shell__stage--table">
+          <AreasView />
+        </main>
       ) : route === 'week' ? (
         <main className="pp-shell__stage pp-shell__stage--week">
           <WeekView />
@@ -215,7 +220,7 @@ function Layout({ route }: { route: Route }) {
           // Streets gets the cursor row without the chart: every row in that
           // table already carries its own seven-day trace, and a citywide one
           // above it is context for a map.
-          <WeekChart chart={route === 'week'} />
+          <WeekChart chart={route === 'week'} hourOnly={route === 'streets'} />
         )}
       </div>
 

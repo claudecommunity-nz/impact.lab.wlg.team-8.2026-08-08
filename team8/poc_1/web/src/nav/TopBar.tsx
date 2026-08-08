@@ -30,7 +30,8 @@ export function TopBar({ route, onOpenExplainer }: { route: Route; onOpenExplain
   // the day artefact those screens are actually drawing: the streets table is
   // always the newest confirmed day, so a chrome stamp reading "Sat 8 Aug" over
   // a Thursday table was the chrome asserting a date the screen does not have.
-  const cursorDate = route === 'week' ? (week?.days[dayOffset]?.date ?? date) : date;
+  const cursorDate =
+    route === 'week' || route === 'areas' ? (week?.days[dayOffset]?.date ?? date) : date;
 
   return (
     <header className="pp-bar">

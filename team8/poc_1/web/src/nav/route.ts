@@ -1,8 +1,9 @@
 /**
- * Four screens does not justify a router.
+ * Five screens does not justify a router.
  *
- * Two of them are tabs: WEEK (the duty officer's brief) and STREETS (every edge
- * ranked). The other two are deliberately NOT:
+ * Three of them are tabs: WEEK (the duty officer's brief), STREETS (every edge
+ * ranked) and AREAS (what has been flagged inside a hazard footprint, and for
+ * how long). The other two are deliberately NOT:
  *
  *   `replay`  the single-day storm replay of 23 Oct 2025. It is the evidence
  *             that the method works, not the product; giving it a tab put a
@@ -15,25 +16,27 @@
 
 import { useEffect, useState } from 'react';
 
-export type Route = 'week' | 'streets' | 'replay' | 'gallery';
-/** The two routes that are actually tabs. */
-export type Tab = 'week' | 'streets';
+export type Route = 'week' | 'streets' | 'areas' | 'replay' | 'gallery';
+/** The three routes that are actually tabs. */
+export type Tab = 'week' | 'streets' | 'areas';
 
 export const TABS: ReadonlyArray<{ tab: Tab; label: string; href: string; key: string }> = [
   { tab: 'week', label: 'Week', href: '#/', key: 'W' },
   { tab: 'streets', label: 'Streets', href: '#/streets', key: 'S' },
+  { tab: 'areas', label: 'Areas', href: '#/areas', key: 'A' },
 ];
 
 export function parseRoute(hash: string): Route {
   if (hash.startsWith('#/gallery')) return 'gallery';
   if (hash.startsWith('#/streets')) return 'streets';
+  if (hash.startsWith('#/areas')) return 'areas';
   if (hash.startsWith('#/replay')) return 'replay';
   return 'week';
 }
 
 /** Which tab reads as current. On the unlisted routes: neither. */
 export const tabOf = (route: Route): Tab | null =>
-  route === 'week' || route === 'streets' ? route : null;
+  route === 'week' || route === 'streets' || route === 'areas' ? route : null;
 
 export function useRoute(): Route {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -48,6 +51,7 @@ export function useRoute(): Route {
 const HREF: Record<Route, string> = {
   week: '#/',
   streets: '#/streets',
+  areas: '#/areas',
   replay: '#/replay',
   gallery: '#/gallery',
 };

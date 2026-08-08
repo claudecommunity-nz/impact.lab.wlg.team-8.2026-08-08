@@ -49,12 +49,9 @@ test('streets', async ({ page }) => {
   await page.screenshot({ path: `${DIR}/streets.png` });
 });
 
-// The "so what" read. Not a tab yet — it ships as the right rail, so it is
-// shot as the rail rather than a full screen. 2x here because the rail is
-// ~390px wide and a 1x crop renders soft next to the 1080p screens.
 test('areas', async ({ page }) => {
-  await page.setViewportSize({ width: 1920, height: 1080 });
-  await week(page);
-  await seek(page, 24 + 18);
-  await page.locator('.pp-week__col--right').screenshot({ path: `${DIR}/areas.png` });
+  await page.goto('/#/areas');
+  await expect(page.locator('.pp-bar__tab', { hasText: 'Areas' })).toBeVisible();
+  await page.waitForTimeout(1200);
+  await page.screenshot({ path: `${DIR}/areas.png` });
 });
