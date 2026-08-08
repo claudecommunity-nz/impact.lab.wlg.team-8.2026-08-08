@@ -2,7 +2,7 @@
 name = "team8"
 version = "0.1.0"
 description = "Impact Lab Wellington — problem 05, data scoping and exploration"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.14"
 dependencies = [
     "duckdb>=1.1",
     "polars>=1.0",
