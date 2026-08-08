@@ -197,6 +197,10 @@ from a clean checkout.
 **Hazard geography** — the [WCC Emergency GIS catalogue](https://github.com/claudecommunity-nz/wcc-emergency-gis-data):
 tsunami evacuation zones, emergency routes, community hubs, street-event closures.
 
+**Future context data** — the [future context data directions](docs/future-context-data.md)
+record the wider set of weather, disruption, lifelines, transport, planned-event,
+hazard, equity and community-signal sources considered for a fuller operational picture.
+
 **Basemap** — © OpenStreetMap, © CARTO.
 
 Each dataset belongs to its publisher — WCC, Greater Wellington, WREMO, NZTA,
