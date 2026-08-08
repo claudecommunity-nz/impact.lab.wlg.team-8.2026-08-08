@@ -7,9 +7,11 @@
 Built for Wellington City Council Emergency Management at Impact Lab Wellington,
 problem 05 — *detect unusual changes in movement around the city*.
 
-[**View the live prototype →**](https://claudecommunity-nz.github.io/impact.lab.wlg.team-8.2026-08-08/)
+[**Try the demo →**](https://claudecommunity-nz.github.io/impact.lab.wlg.team-8.2026-08-08/)
 &nbsp;·&nbsp;
 [The problem, as briefed](docs/impact-lab.md)
+
+<sub>A static snapshot you can click through — the real system runs continuously against the feed.</sub>
 
 <br>
 
@@ -147,9 +149,12 @@ would cost the most trust.
 
 These constraints are surfaced in the interface, not buried here.
 
-- **It is not live.** The movement feed is T+1 — the newest thing it can ever know is
-  yesterday. This is an after-action and next-morning tool, and the header says so on
-  every screen. **In an emergency, call 111.**
+- **This deployment is a static snapshot.** What you can click above is a frozen bundle
+  so anyone can play with it — no server, no credentials. The system itself is built to
+  run continuously against the feed; nothing in the pipeline assumes a fixed date.
+- **The data is T+1, and that is the real ceiling.** Even running live, the movement feed
+  publishes to yesterday, so this is a next-morning and after-action tool rather than a
+  live detector. The header says so on every screen. **In an emergency, call 111.**
 - **Coverage is sparse.** 128 camera sites across a whole city, many blind to one mode
   or the other. *Absence of an anomaly means nothing* — it usually means nothing was
   watching. The map shows where it can and cannot see.
