@@ -1,9 +1,19 @@
+import json
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from team8.fetch_data.events import build_snapshot, deduplicate, normalize_row
+from team8.fetch_data.events import (
+    CAPTURE_DATE,
+    FUTURE_END,
+    PAST_START,
+    SEED_PATH,
+    build_snapshot,
+    deduplicate,
+    normalize_row,
+    validate_snapshot,
+)
 
 
 def example_row() -> dict:
@@ -145,6 +155,69 @@ class TestSnapshot(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             build_snapshot(seed, captured_at="2026-08-08T10:00:00+12:00")
+
+    def test_expands_dated_scheduled_service_templates(self):
+        template = example_row()
+        template.update(
+            {
+                "event_type": "ferry",
+                "name": "Example ferry departure",
+                "venue_or_terminal": "Example terminal",
+                "expected_scale": None,
+                "scale_basis": "unknown",
+                "record_type": "scheduled_service",
+                "start_date": "2026-08-08",
+                "end_date": "2026-08-10",
+                "time_local": "08:15",
+                "weekdays": [5, 6],
+                "duration_minutes": 1,
+            }
+        )
+        template.pop("start_time_local")
+        template.pop("end_time_local")
+        seed = {"sources": [{"source_id": "ferry"}], "scheduled_services": [template]}
+
+        snapshot = build_snapshot(seed, captured_at="2026-08-08T10:00:00+12:00")
+
+        self.assertEqual(len(snapshot["events"]), 2)
+        self.assertTrue(all(row["record_type"] == "scheduled_service" for row in snapshot["events"]))
+        self.assertEqual(snapshot["events"][0]["start_time_local"], "2026-08-08T08:15:00+12:00")
+
+
+class TestSeed(unittest.TestCase):
+    def test_committed_seed_has_required_source_families_and_round_trips(self):
+        seed = json.loads(SEED_PATH.read_text())
+
+        self.assertEqual(
+            seed["window"],
+            {
+                "past_start": PAST_START,
+                "capture_date": CAPTURE_DATE,
+                "future_end": FUTURE_END,
+            },
+        )
+        self.assertGreaterEqual(
+            {source["source_id"] for source in seed["sources"]},
+            {
+                "wellingtonnz-major-events",
+                "venue-calendars",
+                "centreport-cruise",
+                "metlink-gtfs",
+                "interislander-timetable",
+                "bluebridge-timetable",
+            },
+        )
+        self.assertTrue(any(row["start_time_local"][:10] < CAPTURE_DATE for row in seed["events"]))
+        self.assertTrue(any(row["start_time_local"][:10] >= CAPTURE_DATE for row in seed["events"]))
+        self.assertTrue(all(row.get("source_url") for row in seed["events"]))
+
+        snapshot = build_snapshot(seed, captured_at=seed["captured_at"])
+        round_trip = json.loads(json.dumps(snapshot))
+        validate_snapshot(round_trip)
+        self.assertEqual(
+            [row["event_id"] for row in round_trip["events"]],
+            [row["event_id"] for row in snapshot["events"]],
+        )
 
 
 class _FakeContext:

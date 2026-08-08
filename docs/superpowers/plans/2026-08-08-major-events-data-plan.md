@@ -275,7 +275,7 @@ git commit -m "feat: add major events source capture command"
 - The CLI loads the seed from `data/curated/major_events_seed.json` by default.
 - The seed contains only manually reviewed records with source URLs.
 
-- [ ] **Step 1: Add tests for source-family coverage and seed loading**
+- [x] **Step 1: Add tests for source-family coverage and seed loading**
 
 Add a test that loads the committed seed and asserts:
 
@@ -298,7 +298,7 @@ assert {source["source_id"] for source in seed["sources"]} >= {
 Require at least one historical record and at least one future record, with no
 historical claim that lacks a source URL.
 
-- [ ] **Step 2: Add reviewed future records**
+- [x] **Step 2: Add reviewed future records**
 
 Seed the next-three-month window with confirmed records from WellingtonNZ and official
 venue pages, including the available major festivals, arena events, stadium events and
@@ -310,7 +310,7 @@ venue capacity or cruise PAX value. Use `confidence: high` for official venue/Ce
 records and `medium` for curated aggregator or WellingtonNZ records when the exact
 session time is not published.
 
-- [ ] **Step 3: Add the curated historical records**
+- [x] **Step 3: Add the curated historical records**
 
 Add a smaller set of confirmed May–August events from official event pages, venue pages,
 WellingtonNZ records and prior cruise schedules. Mark them `status: completed` only when
@@ -318,7 +318,7 @@ the source confirms the event occurred or its date has passed without a cancella
 notice. Use `capture_method: manual` for backfilled rows and add a `scale_notes` entry
 when the historical record is incomplete.
 
-- [ ] **Step 4: Add recurring ferry service records and GTFS context**
+- [x] **Step 4: Add recurring ferry service records and GTFS context**
 
 Generate dated ferry scheduled-service records for the six-month window from the
 Interislander and Bluebridge timetable patterns. Keep `expected_scale` null unless a
@@ -326,7 +326,7 @@ published capacity is available. Read the Metlink GTFS ZIP to produce a compact
 `transport_context` object containing capture metadata, route count, stop count and the
 ferry/rail/bus service date range; do not emit every bus or rail trip as an event.
 
-- [ ] **Step 5: Run normalization against the seed**
+- [x] **Step 5: Run normalization against the seed**
 
 Run:
 
@@ -338,7 +338,7 @@ Expected: the CLI reports the number of source rows, deduplicated events, histor
 records, future records, scheduled-service records and warnings for unknown scale or
 coordinates.
 
-- [ ] **Step 6: Run tests and commit the reviewed seed**
+- [x] **Step 6: Run tests and commit the reviewed seed**
 
 ```bash
 python -m unittest tests.test_events -v
@@ -358,20 +358,20 @@ git commit -m "data: seed six-month Wellington major events snapshot"
 - `events.py` writes the artifact to `config.OUT / "events" / "major-events.json"` or the equivalent repository-relative path without requiring the movement parquet files.
 - The artifact is valid JSON and validates through `validate_snapshot` after writing.
 
-- [ ] **Step 1: Add an artifact round-trip test**
+- [x] **Step 1: Add an artifact round-trip test**
 
 Build a snapshot into a temporary path, read it back with `json.loads`, and assert that
 the parsed object passes `validate_snapshot` and preserves event IDs, source URLs and
 the six-month window.
 
-- [ ] **Step 2: Implement the CLI writer**
+- [x] **Step 2: Implement the CLI writer**
 
 Load the seed, use its fixed capture date for the demo snapshot, normalize all rows,
 deduplicate, build the snapshot, validate it, and write compact JSON with UTF-8
 encoding. Print the output path and record counts. Do not call `requests` from this
 path; network capture remains an explicit `pull-events` action.
 
-- [ ] **Step 3: Generate the artifact**
+- [x] **Step 3: Generate the artifact**
 
 ```bash
 just events
@@ -383,7 +383,7 @@ Expected output file:
 team8/poc_1/web/public/data/events/major-events.json
 ```
 
-- [ ] **Step 4: Run complete verification**
+- [x] **Step 4: Run complete verification**
 
 ```bash
 python -m unittest discover -s tests -p 'test_*.py' -v

@@ -15,10 +15,10 @@ pull-context:
     uv run python -m team8.fetch_data.pull_context
 
 pull-events:
-    uv run python -m team8.fetch_data.pull_events
+    python3 -m team8.fetch_data.pull_events
 
 events:
-    uv run python -m team8.fetch_data.events
+    python3 -m team8.fetch_data.events
 
 # --- scoping ---------------------------------------------------------------
 # Catalogue every source with its schema -> data/catalogue/sources.json

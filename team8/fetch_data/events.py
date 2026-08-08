@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import hashlib
 import json
-import sys
-from datetime import datetime
+from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -29,6 +29,7 @@ SCALE_BASES = frozenset({"audience_estimate", "venue_capacity", "cruise_pax", "u
 RECORD_TYPES = frozenset({"event", "scheduled_service"})
 CAPTURE_METHODS = frozenset({"html", "pdf", "gtfs", "manual"})
 CONFIDENCE_ORDER = {"low": 0, "medium": 1, "high": 2}
+LOCAL_ZONE = ZoneInfo("Pacific/Auckland")
 
 
 def _text(value: Any, field: str, *, required: bool = False) -> str:
@@ -203,11 +204,56 @@ def deduplicate(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return list(merged.values())
 
 
+def _expand_scheduled_services(templates: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Expand compact recurring-service templates into dated event rows."""
+
+    expanded: list[dict[str, Any]] = []
+    for template in templates:
+        if not isinstance(template, dict):
+            raise ValueError("scheduled service template must be an object")
+        try:
+            start_date = date.fromisoformat(template["start_date"])
+            end_date = date.fromisoformat(template["end_date"])
+            departure_time = time.fromisoformat(template["time_local"])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError("scheduled service template has invalid date/time") from exc
+        if end_date < start_date:
+            raise ValueError("scheduled service end_date must not precede start_date")
+
+        weekdays = template.get("weekdays", list(range(7)))
+        if not isinstance(weekdays, list) or any(day not in range(7) for day in weekdays):
+            raise ValueError("scheduled service weekdays must contain values from 0 to 6")
+        duration_minutes = template.get("duration_minutes", 1)
+        if isinstance(duration_minutes, bool) or not isinstance(duration_minutes, int):
+            raise ValueError("scheduled service duration_minutes must be an integer")
+        if duration_minutes < 0:
+            raise ValueError("scheduled service duration_minutes must not be negative")
+
+        row_template = {
+            key: value
+            for key, value in template.items()
+            if key not in {"start_date", "end_date", "time_local", "weekdays", "duration_minutes"}
+        }
+        current = start_date
+        while current <= end_date:
+            if current.weekday() in weekdays:
+                start = datetime.combine(current, departure_time, tzinfo=LOCAL_ZONE)
+                end = start + timedelta(minutes=duration_minutes)
+                row = dict(row_template)
+                row["start_time_local"] = start.isoformat(timespec="seconds")
+                row["end_time_local"] = end.isoformat(timespec="seconds")
+                expanded.append(row)
+            current += timedelta(days=1)
+    return expanded
+
+
 def build_snapshot(seed: dict[str, Any], *, captured_at: str) -> dict[str, Any]:
     """Build a validated snapshot from a reviewed seed object."""
 
     captured = _timestamp(captured_at, "captured_at")
-    rows = [normalize_row(row, captured_at=captured) for row in seed.get("events", [])]
+    raw_rows = list(seed.get("events", []))
+    raw_rows.extend(_expand_scheduled_services(seed.get("scheduled_services", [])))
+    rows = [normalize_row(row, captured_at=captured) for row in raw_rows]
     snapshot = {
         "version": 1,
         "captured_at": captured,
@@ -274,8 +320,13 @@ def main() -> None:
     unknown_coords = sum(row["latitude"] is None or row["longitude"] is None for row in snapshot["events"])
     historical = sum(row["start_time_local"][:10] < CAPTURE_DATE for row in snapshot["events"])
     future = len(snapshot["events"]) - historical
+    scheduled = sum(row["record_type"] == "scheduled_service" for row in snapshot["events"])
     print(f"wrote {OUT_PATH}")
-    print(f"events={len(snapshot['events'])} historical={historical} future={future}")
+    print(
+        f"source_rows={len(seed.get('events', [])) + len(seed.get('scheduled_services', []))} "
+        f"events={len(snapshot['events'])} scheduled_service={scheduled} "
+        f"historical={historical} future={future}"
+    )
     print(f"unknown_scale={unknown_scale} unknown_coordinates={unknown_coords}")
 
 
