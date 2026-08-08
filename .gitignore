@@ -25,3 +25,12 @@ docs/profiles/
 
 # --- scratch ------------------------------------------------------------
 /*.png
+
+# Raw screen captures. The 3024x1964 original is ~150MB, over GitHub's 100MB
+# hard limit. The compressed cut is committed at docs/demo.mp4 — re-encode with:
+#   ffmpeg -i in.mov -vf scale=1920:-2 -c:v libx264 -preset slow -crf 18 \
+#          -pix_fmt yuv420p -c:a aac -b:a 160k -movflags +faststart docs/demo.mp4
+/*.mov
+
+# Office lock files, created while a deck is open.
+~$*
