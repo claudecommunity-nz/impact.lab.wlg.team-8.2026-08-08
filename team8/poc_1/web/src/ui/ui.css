@@ -786,6 +786,36 @@ button.pp-dx {
   overflow-y: auto;
   color: rgb(var(--pp-color-text-secondary));
 }
+/* At 1512x900 the body is 577px of 913px content. macOS overlay scrollbars do
+   not paint until you scroll, so the FIRST frame on the projector sliced a
+   bullet horizontally through a line of text — it read as a rendering fault,
+   not as "there is more", and everything below the fold (HOW IT WORKS / WHAT IT
+   CANNOT DO / WHERE THE DATA COMES FROM) looked absent rather than scrollable.
+   Sticky rather than absolute: the fade must track the bottom of the SCROLLPORT
+   as the reader scrolls, and an absolute child of a scroll container scrolls
+   away with the content.
+
+   It occupies its OWN 24px at the end of the content rather than being pulled
+   back over the text with a negative margin. The negative-margin version was
+   tried first and washed out the last line — which is "…not live emergency
+   information. In an emergency, call 111." Fading that specific sentence to
+   30% is exactly the kind of quiet honesty loss this pass exists to stop. With
+   its own block the gradient rests over empty space at full scroll and only
+   ever covers text while there is genuinely more to read, which is when the
+   affordance is wanted. */
+.pp-modal__body::after {
+  content: '';
+  display: block;
+  position: sticky;
+  bottom: 0;
+  height: var(--pp-space-5);
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--pp-color-surface-1) / 0),
+    rgb(var(--pp-color-surface-1))
+  );
+  pointer-events: none;
+}
 .pp-modal__footer {
   flex: none;
   display: flex;

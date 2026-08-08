@@ -80,7 +80,16 @@ const RATES = [
  */
 const DEFAULT_RATE: Record<Scope, number> = { week: 2, day: 0 };
 
-export function WeekChart({ chart = true }: { chart?: boolean }) {
+/** `hourOnly` drops the weekday from the big clock. Streets always draws the
+ *  newest CONFIRMED day, so only the hour of the scrubber drives anything on
+ *  that screen — but the scrubber still walks the whole week. Seeking to Sat 8
+ *  on WEEK and then opening STREETS put "Thu 6 Aug 06:00" in the header over a
+ *  "SAT 8 06:00" clock over a Thursday table: two clocks disagreeing on a
+ *  projector. TopBar already pins its stamp to the settled day for this reason;
+ *  the fix never reached the bottom band, so the contradiction just moved down
+ *  the screen. NOT derived from `chart`, which is also false on AREAS — there
+ *  the header stamp does follow the cursor's day, so the day belongs. */
+export function WeekChart({ chart = true, hourOnly = false }: { chart?: boolean; hourOnly?: boolean }) {
   const { week } = useData();
   const { weekHour, mode, dayOffset, scope: appScope } = useAppState();
   const dispatch = useDispatch();
@@ -355,7 +364,7 @@ export function WeekChart({ chart = true }: { chart?: boolean }) {
             happened, in the biggest type on the screen. */}
         <span className="pp-t-label pp-c-secondary">At</span>
         <span className="pp-weekchart__clock pp-t-metric">
-          {day.short} {hh}
+          {hourOnly ? hh : `${day.short} ${hh}`}
         </span>
         {/* Still the 0..167 week index — only its BOUNDS narrow in day scope,
             so the value under the thumb is the same number the map and Streets
@@ -368,7 +377,7 @@ export function WeekChart({ chart = true }: { chart?: boolean }) {
           step={1}
           value={weekHour}
           aria-label={scope === 'day' ? 'Hour of the day' : 'Hour of the week'}
-          aria-valuetext={`${day.weekday} ${hh}`}
+          aria-valuetext={hourOnly ? hh : `${day.weekday} ${hh}`}
           onChange={(e) => {
             setRunning(false);
             dispatch({ type: 'SEEK_WEEK', index: Number(e.currentTarget.value) });

@@ -74,7 +74,14 @@ export function AreaRiskCard({
   return (
     <Panel
       title="Movement inside a risk area"
-      subtitle={`${at} · ${file.n_areas_judged} of ${file.n_areas} areas judgeable`}
+      // Beyond the horizon the judged count is suppressed, not recomputed. The
+      // body already says no zone is scored for an hour that has not happened;
+      // a subtitle asserting "3 of 9 areas judgeable" directly above it was the
+      // header contradicting the card — the exact failure `beyondHorizon` was
+      // added to prevent, fixed in the body and missed here.
+      subtitle={
+        beyondHorizon ? at : `${at} · ${file.n_areas_judged} of ${file.n_areas} areas judgeable`
+      }
       // Behind the (i), not in `footnote`. Coverage and inference together ran
       // to a clamped three-line bordered block on the FIRST card of a 524px
       // rail, and the card below it is the edge list — the payoff for the map.

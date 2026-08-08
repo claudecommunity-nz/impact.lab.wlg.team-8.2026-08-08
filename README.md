@@ -107,21 +107,21 @@ sorted worst-first, filterable by inferred state. This is where a manager goes f
 
 ### Areas — the "so what"
 
-<img src="team8/poc_1/web/e2e/shots/readme/areas.png" width="330" align="right" alt="Movement inside a risk area — 67% below forecast in the Shore Exclusion Zone">
-
-Deviation only matters where it intersects something that matters. This read crosses
+Deviation only matters where it intersects something that matters. This view crosses
 movement with hazard geography — tsunami evacuation zones, exclusion zones, emergency
 routes — and states the consequence in a sentence.
 
 *More people than expected inside a known hazard area* is a fundamentally different
-morning from *fewer people than expected, with no warning in force*.
+morning from *fewer people than expected, with no warning in force*. Both are alerts
+here, filterable by what actually happened: **people left**, **people gathered**, or
+**no stated cause** — the last being the one that most deserves a phone call.
 
-Both are visible here. Both are one click from the streets that produced them.
-
-> **Not yet its own tab.** The read ships today as the right rail on Week.
-> Promoting it to a first-class Areas view is the next piece of work.
-
-<br clear="right">
+<div align="center">
+  <img src="team8/poc_1/web/e2e/shots/readme/areas.png" width="100%" alt="Areas view — 17 alerts inside hazard footprints, with area coverage and unwatched zones listed alongside">
+  <br>
+  <sub>Every alert carries its own footprint, duration and camera count — and the coverage
+  rail names the zones with <b>no camera inside</b>, because unwatched is not the same as quiet.</sub>
+</div>
 
 <h2 align="center">Modular by design</h2>
 

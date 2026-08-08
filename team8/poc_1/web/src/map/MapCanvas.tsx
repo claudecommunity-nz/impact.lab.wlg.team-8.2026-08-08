@@ -623,7 +623,14 @@ export function MapCanvas() {
           the key's summary: they are what we can see, not how to read it. */}
       <div className="pp-map__prov">
         <span>
-          {edges ? nz(edges.n_sites) : '—'} camera sites on {edges?.n_edges ?? '—'} edges ·{' '}
+          {/* "this week" is load-bearing. Three true figures for "camera sites"
+              are on screen at once — this one (sites snapped to the edge network
+              across the week), the footer's "121 of 128 reporting" and the
+              Streets caption's "110 of 121", both of which are the newest
+              CONFIRMED DAY. Unqualified, two numbers for one noun read as a tool
+              that does not know its own coverage. Scope, not arithmetic. */}
+          {edges ? nz(edges.n_sites) : '—'} camera sites on {edges?.n_edges ?? '—'} edges this week
+          ·{' '}
           {edges?.measured.edges_with_2plus_sensors ?? '—'} judged
         </span>
         <span>
