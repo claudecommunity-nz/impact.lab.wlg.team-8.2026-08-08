@@ -2,3 +2,8 @@ node_modules
 dist
 *.tsbuildinfo
 .vite
+
+# Playwright run output. The shots in e2e/shots ARE committed — they are the
+# demo deliverable and the README links them; these two are transient.
+test-results
+playwright-report

@@ -46,6 +46,7 @@ import {
   SORTS,
   SORT_DIR,
   buildRows,
+  dayHorizon,
   filterRows,
   rankRows,
   seriesKeyFor,
@@ -58,6 +59,12 @@ import './streets.css';
  *  8/1000 padding exactly, or the ruler would lie about where noon is. */
 const fracOf = (i: number) => (8 + (984 * i) / 23) / 1000;
 const pctOf = (i: number) => `${(fracOf(i) * 100).toFixed(3)}%`;
+
+/** "Thu 6 Aug 2026". en-NZ puts a comma after the weekday; strip it. */
+const longDate = (iso: string): string =>
+  new Date(`${iso}T00:00:00`)
+    .toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+    .replace(',', '');
 
 export function StreetsView() {
   const { model, index, context, manifest } = useData();
@@ -85,6 +92,9 @@ export function StreetsView() {
     () => (model && index ? buildRows(model, index, seriesKey, mode !== 'all') : []),
     [model, index, seriesKey, mode],
   );
+
+  /** One edge for the whole table — a property of the feed, not of a row. */
+  const horizon = useMemo(() => (model ? dayHorizon(model) : undefined), [model]);
 
   const filtered = useMemo(
     () => filterRows(rows, { query: q, codes, scored: scoredFilter, cbdOnly }),
@@ -282,7 +292,15 @@ export function StreetsView() {
       {/* Every count on this row carries its unit, and the network figure is in
           the same sentence as the day figure. Two numbers for one noun on two
           tabs is the cheapest possible way to lose the room. */}
+      {/* The table is ALWAYS the newest confirmed day artefact — it does not
+          follow the calendar cursor, and nothing on this screen used to say so.
+          Selecting SAT 8 left the chrome asserting Saturday over a Thursday
+          table complete with a 24/24 sparkline for a day that has not happened.
+          The date goes FIRST, before the counts, because the misreading this
+          prevents is a screenshot taken with no other context. */}
       <p className="pp-t-caption pp-c-secondary pp-streets__status" role="status" aria-live="polite">
+        <strong className="pp-streets__asof">{longDate(model.file.date)}</strong> — the newest
+        confirmed day. This table is a settled day, not the calendar cursor.{' '}
         {ranked.length} of {total} camera sites that reported
         {network ? ` (of ${network} city-wide)` : ''}, sorted{' '}
         {SORTS.find((s) => s.key === sort)?.label.toLowerCase()}.
@@ -372,6 +390,7 @@ export function StreetsView() {
               model={model}
               index={index}
               refused={refused}
+              horizon={horizon}
               expanded={expanded}
               currentSiteId={currentSiteId}
               selectedCi={selected}
@@ -405,6 +424,7 @@ export function StreetsView() {
                       model={model}
                       index={index}
                       refused={refused}
+                      horizon={horizon}
                       expanded={expanded.has(r.site.siteId)}
                       current={currentSiteId === r.site.siteId}
                       selectedCi={selected}
@@ -440,6 +460,7 @@ interface BodyProps {
   model: DayModel;
   index: CountlineIndex;
   refused: boolean;
+  horizon: number | undefined;
   expanded: ReadonlySet<string>;
   currentSiteId: string | null;
   selectedCi: number | null;
@@ -474,6 +495,7 @@ const TableBody = memo(function TableBody(p: BodyProps) {
           model={p.model}
           index={p.index}
           refused={p.refused}
+          horizon={p.horizon}
           expanded={p.expanded.has(r.site.siteId)}
           current={p.currentSiteId === r.site.siteId}
           selectedCi={p.selectedCi}

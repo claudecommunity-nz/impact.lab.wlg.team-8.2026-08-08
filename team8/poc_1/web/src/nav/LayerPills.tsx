@@ -11,7 +11,7 @@
  * tool; it lives at #/gallery, which renders every palette side by side.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Button, Toggle } from '../ui';
 import { useAppState, useDispatch } from '../state/app';
 import { useData } from '../data/DataProvider';
@@ -28,12 +28,40 @@ const CONTEXT_LAYERS: ReadonlyArray<{ id: LayerId; label: string; hint: string }
   },
 ];
 
+/** matches --pp-space-2, the gap the panel used to get from its own CSS. */
+const PANEL_GAP = 8;
+
 export function LayerPills() {
   const { ghost, showCoverage, layers } = useAppState();
   const dispatch = useDispatch();
   const { model } = useData();
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
+  const pop = useRef<HTMLDivElement>(null);
+  const [anchor, setAnchor] = useState({ top: 0, right: 0 });
+
+  /**
+   * The panel is position: fixed (see nav.css — the control row is a scroll
+   * container in both axes and clipped an absolute panel), so it has to be told
+   * where the trigger is. Measured before paint, and again on anything that can
+   * move the trigger: a resize, or the control row scrolling sideways at narrow
+   * widths. It is still a child of `wrap`, so the outside-click test below did
+   * not need a second ref — that is the cost a portal would have carried.
+   */
+  useLayoutEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const r = pop.current?.getBoundingClientRect();
+      if (r) setAnchor({ top: r.bottom + PANEL_GAP, right: window.innerWidth - r.right });
+    };
+    place();
+    window.addEventListener('resize', place);
+    document.addEventListener('scroll', place, true);
+    return () => {
+      window.removeEventListener('resize', place);
+      document.removeEventListener('scroll', place, true);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -91,7 +119,7 @@ export function LayerPills() {
         Blind spots
       </Button>
 
-      <div className="pp-pop">
+      <div className="pp-pop" ref={pop}>
         <Button
           variant="chip"
           className="pp-pill"
@@ -103,7 +131,7 @@ export function LayerPills() {
           Context{on > 0 ? ` (${on})` : ''} <span aria-hidden="true">▾</span>
         </Button>
         {open && (
-          <div className="pp-pop__panel">
+          <div className="pp-pop__panel" style={{ top: anchor.top, right: anchor.right }}>
             <p className="pp-t-label pp-c-secondary">Reference geography, never scored</p>
             {CONTEXT_LAYERS.map((l) => (
               <Toggle

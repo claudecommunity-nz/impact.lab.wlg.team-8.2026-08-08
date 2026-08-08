@@ -84,6 +84,29 @@ function reasonFor(model: DayModel, site: SiteView, stat: SiteStat, notViable: b
 }
 
 /**
+ * Where the feed's knowledge of this day stops, as an hour index — or undefined
+ * when it delivered right through to midnight.
+ *
+ * The rows used to draw all 24 hours whatever happened, so 4 Oct — the day the
+ * ingest died at 13:00 — rendered as 123 sparklines that simply ended, with no
+ * mark saying why and no forecast carrying on past it. On a T+1 feed that is
+ * the exact misreading this tool exists to prevent: a trace that stops looks
+ * like a city that stopped.
+ *
+ * CITYWIDE, not per-site, and that distinction is the whole point. A site that
+ * goes quiet at 18:00 while its neighbours keep reporting is a broken sensor —
+ * a GAP, already drawn as a break. Only a tail of hours NO line delivered is
+ * the feed itself running out, and only that earns the horizon rendering.
+ */
+export function dayHorizon(model: DayModel): number | undefined {
+  const missing = new Set(model.file.coverage.hours_missing);
+  if (!missing.has(HOURS - 1)) return undefined;
+  let h = HOURS;
+  while (h > 0 && missing.has(h - 1)) h--;
+  return h;
+}
+
+/**
  * The Δ cell, in words when it cannot be a number. `no baseline` is spelled
  * out because `—` is already ambiguous with "not reported", and `0%` would be
  * a claim we have not earned.

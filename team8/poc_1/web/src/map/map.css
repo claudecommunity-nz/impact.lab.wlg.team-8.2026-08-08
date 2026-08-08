@@ -1,6 +1,8 @@
 /* The map is the only lit object in the room. NO COLOUR LITERALS. */
 
 .pp-map {
+  /* The one inset every overlay corner is measured from. */
+  --pp-map-inset: 12px;
   position: relative;
   width: 100%;
   height: 100%;
@@ -35,26 +37,53 @@
   );
 }
 
-/* Docked inside the free band between the rails, clear of the legend bar. At
-   left: space-3 it sat entirely behind the left card and the whole selection
-   readout — the map's only evidence surface — was invisible. */
-.pp-map__readout {
+/* THE OVERLAY GRID. Four boxes, one 12px inset, three corners:
+     top-left      .pp-map__tl    stamp, then the hover readout under it
+     bottom-left   .pp-map__key   compass, ramp, two-word labels
+     bottom-right  .pp-map__prov  coverage counts + attribution
+   No two of them may intersect, and this is checked by measuring rects in a
+   headless browser at 1512x900 — the previous layout passed by eye and the
+   attribution block was 6px inside the legend bar the whole time.
+   The map is 832x524 in the shell, so the budget is tight: the key (454px) and
+   the provenance block (300px) share one 808px bottom row with 55px between
+   them, and the top-left column clears the key by 54px at its tallest. */
+
+/* One column, so stamp and readout cannot collide however tall either gets.
+   The readout used to be absolutely positioned against the bottom edge and
+   landed on the legend bar; before that it was docked past --pp-rail-left,
+   from when the map was the whole stage. */
+.pp-map__tl {
   position: absolute;
-  z-index: 4;
-  left: calc(var(--pp-rail-left) + var(--pp-space-6));
-  bottom: 46px;
-  width: 340px;
-  max-width: 340px;
+  z-index: 5;
+  top: var(--pp-map-inset);
+  left: var(--pp-map-inset);
+  width: min(320px, 42%);
   display: flex;
   flex-direction: column;
   gap: var(--pp-space-2);
-  padding: var(--pp-space-4);
+  pointer-events: none;
+}
+
+/* Padding is space-3, not space-4: with a two-line edge name this box is 267px
+   tall, which leaves the column 54px of clearance over the key below it.
+   Measured at 1512x900, not eyeballed — at space-4 it was 27px. */
+.pp-map__readout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pp-space-2);
+  padding: var(--pp-space-3);
   border-radius: var(--pp-radius-md);
   background: rgb(var(--pp-color-surface-scrim) / var(--pp-alpha-scrim));
   backdrop-filter: blur(12px) saturate(0.8);
   border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-strong));
   box-shadow: var(--pp-elev-2);
   pointer-events: none;
+}
+/* The readout is pointer-transparent so a drag across it still reaches the deck
+   controller. The (i) is the one thing inside it that has to take its click
+   back, exactly like .pp-map__more in the key. */
+.pp-map__readout .pp-info {
+  pointer-events: auto;
 }
 .pp-map__readout-head {
   display: flex;
@@ -76,104 +105,153 @@
 .pp-map__readout-grid--4 > :nth-child(4n + 1) {
   justify-self: start;
 }
-/* The column clips at 2,400/hr. Where it does, the figure says so. */
-.pp-map__clip {
-  color: rgb(var(--pp-color-status-provisional));
-}
-/* The countline is one of several at this camera, and it is subordinate to the
-   site above it. The rule says so without a heading. */
-.pp-map__readout-member {
+/* The per-mode signature. Three readings of one drop, on one row: which of them
+   moved is the whole diagnosis, so they have to be compared at a glance rather
+   than read down a column. The active mode is marked, not isolated — narrowing
+   to People must not hide that vehicles held. */
+.pp-map__signature {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px var(--pp-space-3);
   padding-top: var(--pp-space-2);
   border-top: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+  color: rgb(var(--pp-color-text-muted));
+}
+.pp-map__signature > span[data-on='true'] {
+  color: rgb(var(--pp-color-text-primary));
+}
+
+/* Provenance: attribution + coverage counts, bottom-right corner of the inset
+   grid. Both are required on the frame and neither is content, so they are the
+   smallest type on the map — below caption, deliberately.
+
+   It used to sit at bottom: 44px trying to clear a full-width legend bar by
+   eye, and it did not: measured, it overlapped the bar by 6px. Now the two
+   boxes are on the same bottom line and separated horizontally, which is a
+   property widths can be checked against rather than a guess about height.
+
+   Wraps rather than truncating: an attribution that silently loses "© CARTO"
+   is not an attribution. */
+.pp-map__prov {
+  position: absolute;
+  z-index: 4;
+  right: var(--pp-map-inset);
+  bottom: var(--pp-map-inset);
+  max-width: min(300px, 38%);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-family: var(--pp-font-sans);
+  font-size: 10.5px;
+  line-height: 1.35;
+  text-align: right;
+  text-wrap: balance;
+  color: rgb(var(--pp-color-text-muted));
+  pointer-events: none;
+}
+
+/* The stamp. Top-left so a crop of the map keeps it, which is the whole point:
+   a coloured map of a city must not read as a live situation report. It grew
+   from a pill to a card because it now carries the headline sentence — the
+   thing a duty officer reads before they read the map. */
+.pp-map__stamp {
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-/* Clears the legend bar, which now sits flush to the bottom edge and is wide
-   enough to have run straight through this line. */
-.pp-map__attrib {
-  position: absolute;
-  z-index: 4;
-  right: var(--pp-space-2);
-  bottom: 42px;
-  text-align: right;
-  color: rgb(var(--pp-color-text-muted));
-  pointer-events: none;
-}
-
-/* The replay stamp. Top-left so a crop of the map keeps it, which is the
-   whole point: a shared screenshot must not read as a live situation report. */
-.pp-map__replay {
-  position: absolute;
-  z-index: 5;
-  top: var(--pp-space-2);
-  left: var(--pp-space-2);
-  display: flex;
-  align-items: center;
-  gap: var(--pp-space-2);
-  padding: var(--pp-space-1) var(--pp-space-2);
-  border-radius: var(--pp-radius-pill);
-  background: rgb(var(--pp-color-surface-1) / 0.88);
+  padding: var(--pp-space-2) var(--pp-space-3);
+  border-radius: var(--pp-radius-md);
+  background: rgb(var(--pp-color-surface-1) / 0.92);
   border: 1px solid rgb(var(--pp-color-border-strong) / var(--pp-alpha-border-strong));
+  box-shadow: var(--pp-elev-1);
   color: rgb(var(--pp-color-text-primary));
   pointer-events: none;
 }
-.pp-map__replay-tag {
-  color: rgb(var(--pp-color-status-provisional));
+.pp-map__stamp-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--pp-space-2);
 }
-.pp-map__replay-not-live {
+.pp-map__stamp-at {
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-map__stamp-line {
+  margin: 0;
+  color: rgb(var(--pp-color-text-secondary));
+}
+.pp-map__stamp-line strong {
+  color: rgb(var(--pp-color-text-primary));
+  font-weight: 600;
+}
+/* Required on every frame, so it is inside the card a screenshot crops to and
+   not only in the shell footer. */
+.pp-map__stamp-tag {
   color: rgb(var(--pp-color-text-muted));
 }
 
-/* The map's four corners all belong to a floating panel now, so the compass
-   and the legend share one bar in the strip between them.
+/* The key, bottom-left. This is the third attempt and the first one measured.
+   It was a 620px card floating over Te Aro; then a centred bar flush to the
+   bottom edge, which fixed the occlusion and left a 767px slab of caption text
+   across an 832px map whose right end ran under the attribution.
 
-   It used to be a 620px card three lines tall floating a little above the
-   bottom edge, which put it squarely on Te Aro and the southern CBD in every
-   demo frame — a legend occluding the data it exists to explain, permanently,
-   in the default state. Narrowing it once was not enough, because the problem
-   was its HEIGHT and its distance from the edge, not its width. It is now one
-   row, flush to the bottom edge: same information, a third of the area, and
-   what it does cover is the bottom margin of the canvas rather than a
-   neighbourhood. Everything past the four headline clauses moved into the
-   disclosure. */
-.pp-map__chrome {
+   Small swatches, one row, two or three words a label, and it stops at half
+   the map's width so the provenance block has the other corner. Every sentence
+   it used to carry is one click away in the disclosure — none was deleted. */
+.pp-map__key {
   position: absolute;
   z-index: 5;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: min(900px, 96%);
+  bottom: var(--pp-map-inset);
+  left: var(--pp-map-inset);
+  max-width: 56%;
   display: flex;
   align-items: center;
-  gap: var(--pp-space-3);
-  padding: var(--pp-space-1) var(--pp-space-3);
-  border-radius: var(--pp-radius-md) var(--pp-radius-md) 0 0;
+  flex-wrap: nowrap;
+  gap: var(--pp-space-2);
+  padding: 3px var(--pp-space-2);
+  border-radius: var(--pp-radius-pill);
   background: rgb(var(--pp-color-surface-1) / 0.9);
   border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
-  border-bottom: none;
   box-shadow: var(--pp-elev-1);
+  font-family: var(--pp-font-sans);
+  font-size: 11.5px;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: rgb(var(--pp-color-text-muted));
   pointer-events: none;
 }
+.pp-map__key strong {
+  color: rgb(var(--pp-color-text-secondary));
+  font-weight: 600;
+}
 
-/* The compass. Bearing 90 is the measured winner for occlusion, which puts
-   north to the left; this is what pays for that. */
+/* The compass is a button now. It spent the build as a pointer-events: none div
+   inside a pointer-events: none bar — a needle that told you the map was
+   rotated and gave you no way to undo it. Same rule as .pp-map__more: the bar
+   stays transparent to drags, the controls in it take their clicks back. */
 .pp-map__compass {
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
   display: grid;
   place-items: center;
   border-radius: var(--pp-radius-pill);
   background: rgb(var(--pp-color-surface-1) / 0.88);
   border: 1px solid rgb(var(--pp-color-border-strong) / var(--pp-alpha-border-strong));
   color: rgb(var(--pp-color-text-secondary));
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
+  transition:
+    color var(--pp-motion-fast) var(--pp-ease-standard),
+    border-color var(--pp-motion-fast) var(--pp-ease-standard);
+}
+.pp-map__compass:hover {
+  color: rgb(var(--pp-color-text-primary));
+  border-color: rgb(var(--pp-color-border-strong));
 }
 .pp-map__compass svg {
-  width: 26px;
-  height: 26px;
+  width: 20px;
+  height: 20px;
   transform-origin: 50% 50%;
 }
 .pp-map__compass path {
@@ -187,78 +265,60 @@
   letter-spacing: 0.04em;
 }
 
-/* The drawn key. One case, one solid, one gap — the encoding in 34px, which
-   lands before any of the prose beside it does. */
-.pp-map__key {
+/* The ramp, drawn. Discrete swatches rather than a CSS gradient: the gradient
+   is generated in Oklab in color.ts and a linear-gradient() would re-interpolate
+   it in sRGB, which muddies the deficit arm — the legend would then disagree
+   with the map it explains. Eight stops read as continuous at this size. */
+.pp-map__ramp {
   flex: none;
-  width: 26px;
-  height: 31px;
-  overflow: visible;
-}
-.pp-map__key-case {
-  fill: rgb(var(--pp-color-sem-ghost) / 0.36);
-  stroke: rgb(var(--pp-color-sem-ghost-core) / 0.62);
-  stroke-width: 1;
-}
-.pp-map__key-solid {
-  fill: rgb(var(--pp-color-sem-deficit));
-}
-/* The measured span, drawn as a dimension tick because that is what it is:
-   the shortfall in movements per hour, not a decorative bracket. */
-.pp-map__key-gap {
-  stroke: rgb(var(--pp-color-text-muted));
-  stroke-width: 1;
-  fill: none;
-}
-
-/* Three channels, three words each, on one row. Half the map renders neutral by
-   design once the noise floor lands and the suburbs are stubs; without this
-   much at least it reads broken. */
-.pp-map__coverage {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 2px var(--pp-space-4);
-  color: rgb(var(--pp-color-text-muted));
-  white-space: nowrap;
+  gap: var(--pp-space-1);
+  font-family: var(--pp-font-mono);
 }
-.pp-map__coverage strong {
-  color: rgb(var(--pp-color-text-secondary));
-  font-weight: 600;
+.pp-map__ramp-swatches {
+  display: flex;
+  height: 7px;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
+}
+.pp-map__ramp-swatches i {
+  display: block;
+  width: 9px;
+  height: 100%;
 }
 
-/* The two footprints, drawn. Naming two sides of a site stopped being true the
-   moment the camera could rotate. */
-.pp-map__pair {
+/* The grey is a statement, so it gets a swatch like every other statement on
+   this bar rather than being named in prose and left to be guessed at. */
+.pp-map__grey {
   display: inline-flex;
   align-items: center;
   gap: var(--pp-space-1);
 }
-.pp-map__pair svg {
-  width: 34px;
-  height: 15px;
-  overflow: visible;
-}
-.pp-map__key-ped,
-.pp-map__key-veh {
-  fill: rgb(var(--pp-color-sem-ghost) / 0.42);
-  stroke: rgb(var(--pp-color-sem-ghost-core) / 0.8);
-  stroke-width: 1;
+.pp-map__grey i {
+  width: 11px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgb(var(--pp-color-sem-unknown));
 }
 
 /* The bar is pointer-transparent so drags reach the deck controller; the
    disclosure is the one thing in it that has to take a click back. */
+/* Deliberately NOT position: relative — the body anchors to .pp-map__key, not
+   to the summary. Anchored to the summary it opened from the key's right end
+   and covered the attribution block by 13px, measured; anchored to the key it
+   opens from the map's left edge and clears it by ~100px. */
 .pp-map__more {
   pointer-events: auto;
-  position: relative;
 }
-/* The bar is flush to the bottom edge, so the disclosure opens upward. */
+/* The key sits at the bottom edge, so the disclosure opens upward — and from
+   the LEFT edge now that the key is in the bottom-left corner. */
 .pp-map__more-body {
   position: absolute;
   bottom: calc(100% + var(--pp-space-2));
-  right: 0;
-  width: min(52ch, 70vw);
+  left: 0;
+  width: min(48ch, 62vw);
   padding: var(--pp-space-3);
   border-radius: var(--pp-radius-md);
   background: rgb(var(--pp-color-surface-1) / 0.96);

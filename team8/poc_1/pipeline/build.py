@@ -11,12 +11,13 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import duckdb
 
-from . import checks, config, context, days, index, vitals
+from . import (advise, checks, config, context, days, edges, feeds, index,
+               vitals, week as week_mod)
 from .daycal import build_calendar
 from .diagnose import DIAGNOSES
 
@@ -143,6 +144,87 @@ def main() -> None:
         manifest_vitals.append({"file": f"data/vitals/{stem}.json",
                                 "start": start, "end": end, "hours": v["hours"]})
 
+    # --- the week artefact -------------------------------------------------
+    # The Monday of the newest data through the following Sunday: four settled
+    # days and three modelled ones, which is the situation the product models.
+    newest, = con.execute(
+        f"select cast(max(countline_date) as varchar) from '{config.HOURLY_RECENT}'"
+    ).fetchone()
+    nd = date.fromisoformat(newest)
+    ws = nd - timedelta(days=nd.weekday())
+    adv, standing = advise.closures(ws, ws + timedelta(days=6))
+    standing += advise.sensor_conditions(con, config.HOURLY_RECENT, ws, nd)
+    wk = week_mod.build(con, config.HOURLY_RECENT, calendars[config.HOURLY_RECENT],
+                        newest, adv, standing)
+    checks.check_week(wk)
+    written.append(("data/week.json", _write(OUT / "week.json", wk)))
+
+    print(f"\nWeek {wk['label']}  ({wk['week_start']} -> {wk['week_end']})")
+    print(f"  {wk['confirmed_hours']} of 168 hours confirmed, "
+          f"newest confirmed hour {wk['horizon']['last_confirmed_hour']}")
+    print(f"  trend factor {wk['model']['trend_factor']}, "
+          f"{wk['model']['events_applied']} named event(s) applied to the forecast")
+    print("  derived day factors (published, NOT applied — the baseline is "
+          "already same-weekday):")
+    for name, f in wk["day_factors"]["factor"].items():
+        print(f"      {name:<10} {f}  (n={wk['day_factors']['n_days'][name]})")
+    for d in wk["days"]:
+        dev = d["deviation_pct"]["total"] if d["deviation_pct"] else None
+        print(f"    {d['short']:<7} {d['state']:<9} pool={d['baseline_n']:2}d "
+              f"fcst={d['forecast']['total']:>9,} "
+              f"actual={d['actual']['total'] if d['actual'] else '-':>9} "
+              f"dev={dev if dev is not None else '-':>6}%")
+    print(f"  week to date: {wk['week']['actual_to_date']['total']:,} actual vs "
+          f"{wk['week']['forecast_to_date']['total']:,} forecast "
+          f"({wk['week']['deviation_pct']['total']:+}%)")
+    print(f"  advisements: {len(adv)} · standing conditions: {len(standing)}")
+
+    # --- the edge network --------------------------------------------------
+    eg, rep = edges.build(con, config.HOURLY_RECENT, calendars[config.HOURLY_RECENT],
+                          newest, wk["model"]["trend_factor"], wk["confirmed_hours"])
+    checks.check_edges(eg)
+    written.append(("data/edges.json", _write(OUT / "edges.json", eg)))
+    print("\nEdge network")
+    print(f"  roads: {rep['roads_polylines']:,} polylines, "
+          f"{rep['roads_vertices']:,} vertices; largest component "
+          f"{rep['graph_largest_component_pct']}% at {edges.JOIN_TOLERANCE_M} m vertex join")
+    print(f"  snap: {rep['countlines_snapped']}/{rep['countlines_total']} countlines "
+          f"within {edges.SNAP_CAP_M} m — max {rep['snap_max_m']} m, "
+          f"median {rep['snap_median_m']} m, {rep['snap_over_cap']} over cap")
+    print(f"  {rep['sites']} camera sites -> {rep['seed_polylines']} seed polylines -> "
+          f"{rep['reached_polylines']} polylines reached at {edges.BUDGET_M:.0f} m")
+    print(f"  {rep['edges']} named edges, "
+          f"{rep['edges_with_2plus_sensors']} with 2+ contributing sensors "
+          f"({rep['edges'] - rep['edges_with_2plus_sensors']} unjudged)")
+    top = [e for e in eg["edges"] if e["sensors"] >= 2][:5]
+    for e in top:
+        d = e["day"][max(0, (wk["confirmed_hours"] - 1) // 24)]["dev_pct"]
+        print(f"    {e['name'][:34]:<34} {e['type']:<9} {e['sensors']}s "
+              f"{e['flow_per_hour']:>6}/hr  today {d['total'] if d else '-'}%")
+
+    # --- pluggable feeds and the area-risk read ----------------------------
+    # Runs after edges because the join cites STREET NAMES as its evidence, and
+    # those only exist once the sensors have been projected onto the network.
+    ffiles, frep = feeds.build(con, config.HOURLY_RECENT,
+                               calendars[config.HOURLY_RECENT], newest,
+                               wk["model"]["trend_factor"], wk["confirmed_hours"], eg)
+    for rel, obj in ffiles.items():
+        written.append((f"data/{rel}", _write(OUT / rel, obj)))
+
+    print(f"\nFeeds  ({frep['feeds_connected']} of {frep['feeds']} connected, "
+          f"{frep['items']} advisement(s) this week)")
+    for f in frep["feed_meta"]:
+        print(f"  {f['id']:<24} {f['status']:<12} {f['items']} item(s)"
+              + (f"  — {f['empty_reason'][:64]}" if f["empty_reason"] else ""))
+    print(f"\nRisk areas  ({frep['areas']} areas, {frep['areas_judged']} with "
+          f"{feeds.AREA_MIN_SITES}+ cameras, {frep['areas_unwatched']} unwatched)")
+    for a in frep["area_rows"]:
+        d = a["dev"]["total"][wk["confirmed_hours"] - 1] if a["dev"] else None
+        print(f"  {a['class']:<22} {a['name'][:30]:<30} {a['sites']:>3} cameras "
+              f"{a['n_streets']:>3} streets  newest hour "
+              f"{('+' if d and d > 0 else '') + str(d) + '%' if d is not None else '—':>6}"
+              + ("" if a["judged"] else "   UNJUDGED"))
+
     # --- GIS context layers ------------------------------------------------
     print("\nGIS context layers (reference geography, never scored)")
     gis = []
@@ -158,8 +240,7 @@ def main() -> None:
         print(f"  {layer_id:32} {_kb(size):>10}  {publisher}")
 
     # --- manifest ----------------------------------------------------------
-    latest, = con.execute(
-        f"select max(countline_date) from '{config.HOURLY_RECENT}'").fetchone()
+    latest = nd
     # The one coverage number the whole interface quotes, counted rather than
     # typed. Four copies of "386 sensors" survived a correction because each was
     # a literal; this is the source all of them now read.
@@ -183,6 +264,32 @@ def main() -> None:
         "diagnoses": list(DIAGNOSES),
         "days": manifest_days,
         "vitals": manifest_vitals,
+        "week": {
+            "file": "data/week.json",
+            "week_start": wk["week_start"], "week_end": wk["week_end"],
+            "label": wk["label"], "hours": wk["hours"],
+            "confirmed_hours": wk["confirmed_hours"],
+            "series": wk["series"],
+        },
+        "edges": {
+            "file": "data/edges.json",
+            "n_edges": eg["n_edges"], "n_sites": eg["n_sites"],
+            "series": eg["series"], "measured": eg["measured"],
+            "note": ("Camera sites projected onto WCC road centrelines. Edge "
+                     "numbers are inferred from up to 4 sensors and are not a "
+                     "measurement of the whole stretch."),
+        },
+        "feeds": {
+            "file": "data/feeds/index.json",
+            "advisement_feeds": frep["feeds"],
+            "connected": frep["feeds_connected"],
+            "items": frep["items"],
+            "area_risk_file": "data/feeds/area-risk.json",
+            "areas": frep["areas"], "areas_judged": frep["areas_judged"],
+            "note": ("Advisement and risk-area feeds are modular adapters. None of "
+                     "them moves the forecast; they are listed so a deviation can "
+                     "be explained by a human, not explained away by the model."),
+        },
         "countlines_file": "data/countlines.json",
         "gis_layers": gis,
         "gis_layers_omitted": config.GIS_OMITTED,

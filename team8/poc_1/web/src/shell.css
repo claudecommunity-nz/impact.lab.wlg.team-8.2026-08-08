@@ -1,10 +1,11 @@
 /*
- * Tab shell. Four fixed bands, top to bottom:
+ * Tab shell. Five fixed bands, top to bottom:
  *
  *   A  identity bar      48px, opaque, the accent's one load-bearing surface
- *   B  control row       48px, the pills
- *   C  the instrument    everything left over — map, or the Streets table
- *   D  bottom strip      vitals + transport, then the provenance line
+ *   B  calendar strip    the week's seven day chips (replay: the old pills)
+ *   C  the instrument    everything left over — three columns, or the table
+ *   D  the week chart    168 hours with the horizon cursor under it
+ *   E  provenance line   111 and T+1, on every route
  *
  * The band heights are custom properties on .pp-shell and NOTHING hardcodes
  * them. The rails used to sit at `bottom: 168px` under a 350px bottom bar, so
@@ -18,15 +19,21 @@
  */
 
 .pp-shell {
-  --pp-chrome-top: 96px;
+  /* 48 identity + 60 calendar. The calendar chip carries three lines (date,
+     figure, what the figure means) and 48px clipped the third — which is the
+     one that stops a forecast reading as a measurement. */
+  --pp-chrome-top: 108px;
   /* Published so the map can dock its own chrome clear of the rails instead of
      guessing. The selection readout spent this whole build rendering behind the
      left card. */
   --pp-rail-left: 376px;
   --pp-rail-right: 392px;
   --pp-chrome-footer: 28px;
-  /* includes the footer */
-  --pp-chrome-bottom: 300px;
+  /* Includes the footer. Measured, not guessed: the week chart is 222px of
+     head + 150px plot + day axis, plus 16px of band padding, plus the 28px
+     provenance line. At 246 the day axis rendered UNDER the footer and the
+     Sunday cell was unclickable. */
+  --pp-chrome-bottom: 268px;
 
   position: relative;
   height: 100dvh;
@@ -35,10 +42,15 @@
   background: rgb(var(--pp-color-bg-base));
 }
 
-/* Streets carries no vitals strip: on a ranked table every row already has its
-   own trace, and a citywide one is context for a map. */
-.pp-shell[data-tab='streets'] {
-  --pp-chrome-bottom: 160px;
+/* Streets carries no week chart: on a ranked table every row already has its
+   own trace, and a citywide one is context for a map. Only the cursor row. */
+.pp-shell[data-route='streets'] {
+  --pp-chrome-bottom: 92px;
+}
+/* Replay keeps the taller vitals + transport stack it was built around. */
+.pp-shell[data-route='replay'] {
+  --pp-chrome-top: 96px;
+  --pp-chrome-bottom: 300px;
 }
 
 /* --- band C: the instrument ------------------------------------------- */
@@ -50,6 +62,12 @@
 }
 /* Streets is the ONLY scrolling surface in the product. */
 .pp-shell__stage--table {
+  background: rgb(var(--pp-color-bg-base));
+  overflow: hidden;
+}
+/* The week is a grid, so the map sits IN a cell and the rails no longer need
+   the map to leave room for them — see --pp-rail-* below. */
+.pp-shell__stage--week {
   background: rgb(var(--pp-color-bg-base));
   overflow: hidden;
 }
@@ -107,7 +125,8 @@
   background: rgb(var(--pp-color-bg-base));
   border-top: 1px solid rgb(var(--pp-color-border-subtle) / var(--pp-alpha-border-subtle));
 }
-.pp-shell__bottom > .pp-vitals {
+.pp-shell__bottom > .pp-vitals,
+.pp-shell__bottom > .pp-weekchart {
   flex: 1 1 auto;
   min-height: 0;
 }
@@ -175,10 +194,16 @@
  * 111 line. On Streets there are no rails, so P is a no-op — it must never
  * hide the table. */
 .pp-shell--stage .pp-shell__left,
-.pp-shell--stage .pp-shell__right {
+.pp-shell--stage .pp-shell__right,
+.pp-shell--stage .pp-week__col {
   opacity: 0;
   pointer-events: none;
   transform: translateY(-4px);
+}
+/* The grid columns collapse to zero so the map takes the whole band, rather
+   than leaving two empty gutters where the briefing used to be. */
+.pp-shell--stage .pp-week {
+  grid-template-columns: 0 1fr 0;
 }
 .pp-shell__left,
 .pp-shell__right {

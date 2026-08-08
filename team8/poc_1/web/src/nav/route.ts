@@ -1,28 +1,39 @@
 /**
- * Three screens does not justify a router.
+ * Four screens does not justify a router.
  *
- * `gallery` is deliberately NOT a tab. It renders synthetic numbers to prove no
- * component reaches past a custom property, and a judge clicking it mid-demo
- * would be looking at fabricated data. It stays reachable only from the
- * provenance footer.
+ * Two of them are tabs: WEEK (the duty officer's brief) and STREETS (every edge
+ * ranked). The other two are deliberately NOT:
+ *
+ *   `replay`  the single-day storm replay of 23 Oct 2025. It is the evidence
+ *             that the method works, not the product; giving it a tab put a
+ *             historical incident on the same footing as this week's brief.
+ *             Kept reachable so the demo can jump to it.
+ *   `gallery` renders synthetic numbers to prove no component reaches past a
+ *             custom property. A judge clicking it mid-demo would be looking
+ *             at fabricated data.
  */
 
 import { useEffect, useState } from 'react';
 
-export type Route = 'map' | 'streets' | 'gallery';
+export type Route = 'week' | 'streets' | 'replay' | 'gallery';
 /** The two routes that are actually tabs. */
-export type Tab = 'map' | 'streets';
+export type Tab = 'week' | 'streets';
 
 export const TABS: ReadonlyArray<{ tab: Tab; label: string; href: string; key: string }> = [
-  { tab: 'map', label: 'Map', href: '#/', key: 'M' },
+  { tab: 'week', label: 'Week', href: '#/', key: 'W' },
   { tab: 'streets', label: 'Streets', href: '#/streets', key: 'S' },
 ];
 
 export function parseRoute(hash: string): Route {
   if (hash.startsWith('#/gallery')) return 'gallery';
   if (hash.startsWith('#/streets')) return 'streets';
-  return 'map';
+  if (hash.startsWith('#/replay')) return 'replay';
+  return 'week';
 }
+
+/** Which tab reads as current. On the unlisted routes: neither. */
+export const tabOf = (route: Route): Tab | null =>
+  route === 'week' || route === 'streets' ? route : null;
 
 export function useRoute(): Route {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -34,8 +45,15 @@ export function useRoute(): Route {
   return parseRoute(hash);
 }
 
+const HREF: Record<Route, string> = {
+  week: '#/',
+  streets: '#/streets',
+  replay: '#/replay',
+  gallery: '#/gallery',
+};
+
 /** Sets the hash rather than lifting a piece of state, so browser back works
  *  and the keyboard shortcut is a shortcut for a real link. */
-export function goToTab(tab: Tab): void {
-  window.location.hash = tab === 'streets' ? '#/streets' : '#/';
+export function goToRoute(route: Route): void {
+  window.location.hash = HREF[route];
 }

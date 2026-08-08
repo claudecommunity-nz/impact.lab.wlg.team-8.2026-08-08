@@ -11,25 +11,26 @@
 import { Button } from '../ui';
 import { useData } from '../data/DataProvider';
 import { useAppState } from '../state/app';
-import { TABS, type Tab } from './route';
+import { TABS, tabOf, type Route } from './route';
 
-/** "Thu 23 Oct 2025". en-NZ puts a comma after the weekday; strip it — this
+/** "Thu 6 Aug 09:00". en-NZ puts a comma after the weekday; strip it — this
  *  sits in a mono flag beside two more mono fields and the comma reads as a
  *  separator between them rather than part of the date. */
-const shortDate = (iso: string): string =>
-  new Date(`${iso}T00:00:00`)
-    .toLocaleDateString('en-NZ', {
-      weekday: 'short',
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    })
-    .replace(',', '');
+const stamp = (iso: string, hour: number): string =>
+  `${new Date(`${iso}T00:00:00`)
+    .toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' })
+    .replace(',', '')} ${String(hour).padStart(2, '0')}:00`;
 
-export function TopBar({ tab, onOpenExplainer }: { tab: Tab; onOpenExplainer: () => void }) {
-  const { date } = useAppState();
-  const { manifest } = useData();
-  const day = manifest?.days.find((d) => d.date === date);
+export function TopBar({ route, onOpenExplainer }: { route: Route; onOpenExplainer: () => void }) {
+  const { date, hour, dayOffset } = useAppState();
+  const { week } = useData();
+  const active = tabOf(route);
+
+  // On the WEEK tab the stamp is the week cursor. On replay and streets it is
+  // the day artefact those screens are actually drawing: the streets table is
+  // always the newest confirmed day, so a chrome stamp reading "Sat 8 Aug" over
+  // a Thursday table was the chrome asserting a date the screen does not have.
+  const cursorDate = route === 'week' ? (week?.days[dayOffset]?.date ?? date) : date;
 
   return (
     <header className="pp-bar">
@@ -41,8 +42,8 @@ export function TopBar({ tab, onOpenExplainer }: { tab: Tab; onOpenExplainer: ()
             key={t.tab}
             className="pp-bar__tab pp-t-label"
             href={t.href}
-            data-active={t.tab === tab}
-            aria-current={t.tab === tab ? 'page' : undefined}
+            data-active={t.tab === active}
+            aria-current={t.tab === active ? 'page' : undefined}
             title={`${t.label} (${t.key})`}
           >
             {t.label}
@@ -50,8 +51,14 @@ export function TopBar({ tab, onOpenExplainer }: { tab: Tab; onOpenExplainer: ()
         ))}
       </nav>
 
-      <span className="pp-bar__flag pp-t-mono-sm" title={day?.label}>
-        {shortDate(date)}
+      <span className="pp-bar__flag pp-t-mono-sm">
+        <span className="pp-bar__role">
+          {route === 'replay' ? 'REPLAY' : 'DUTY OFFICER BRIEF'}
+        </span>
+        <span className="pp-bar__sep" aria-hidden="true">
+          ·
+        </span>
+        {stamp(cursorDate, hour)}
         <span className="pp-bar__sep" aria-hidden="true">
           ·
         </span>
@@ -59,7 +66,7 @@ export function TopBar({ tab, onOpenExplainer }: { tab: Tab; onOpenExplainer: ()
         <span className="pp-bar__sep" aria-hidden="true">
           ·
         </span>
-        T+1
+        T+1 FEED
       </span>
 
       <Button

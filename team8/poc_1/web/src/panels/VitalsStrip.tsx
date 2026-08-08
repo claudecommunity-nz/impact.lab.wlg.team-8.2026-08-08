@@ -9,12 +9,22 @@
 
 import { useMemo } from 'react';
 import { VitalsTrace } from '../ui';
+// Deep import on purpose: the axis labels are HTML siblings of the SVG and have
+// to land on the SVG's own geometry, so they share its function rather than
+// re-deriving it. Not re-exported from the barrel — it is not a primitive.
+import { traceFrac } from '../ui/VitalsTrace';
 import { useAppState, useDispatch } from '../state/app';
 import { useData } from '../data/DataProvider';
 import { signedPct } from '../copy/strings';
 
-/** Days of context either side of the replay day. */
-const PAD_DAYS = 2;
+/** A calendar week, not a sliding window.
+ *
+ * Two days either side put the replay day in the middle every time, so the
+ * shape around it changed with the weekday: a Thursday came flanked by two
+ * weekdays, a Saturday by a weekend. The whole read of this trace is "the week
+ * did its usual thing and then it didn't", and that only works when the week
+ * is the frame — same start, same five working humps, in the same place. */
+const WEEK_DAYS = 7;
 
 /** A flatline needs vertical room to be flat in. At 96px inside a 162px strip
  *  the 23 October amplitude collapse read as a small dip rather than an arrest. */
@@ -29,10 +39,21 @@ export function VitalsStrip() {
 
   const win = useMemo(() => {
     if (!vitals) return null;
-    const entry = vitals.day_index.find((d) => d.date === date);
-    if (!entry) return null;
-    const from = Math.max(0, entry.offset - PAD_DAYS * 24);
-    const to = Math.min(vitals.hours, entry.offset + (PAD_DAYS + 1) * 24);
+    const at = vitals.day_index.findIndex((d) => d.date === date);
+    if (at < 0) return null;
+    const entry = vitals.day_index[at];
+
+    // `weekday` is a full name written by the pipeline, so walk back through
+    // the index rather than doing date arithmetic on strings. Stopping at 0 is
+    // the guard for a file that opens mid-week.
+    let mon = at;
+    while (mon > 0 && vitals.day_index[mon].weekday !== 'Monday') mon--;
+
+    // 2026-08-06 is the LAST day of its file, so its week runs off the end.
+    // Clamp and let the axis show four days: an axis that draws days the feed
+    // never delivered is the same lie as drawing an unreported hour as zero.
+    const from = vitals.day_index[mon].offset;
+    const to = Math.min(vitals.hours, from + WEEK_DAYS * 24);
     const slice = <T,>(a: T[]) => a.slice(from, to);
     const flags = slice(vitals.flags);
 
@@ -60,6 +81,7 @@ export function VitalsStrip() {
       marks,
       cursor: entry.offset - from + hour,
       entry,
+      weekStart: `${vitals.day_index[mon].weekday} ${vitals.day_index[mon].date}`,
     };
   }, [vitals, date, hour]);
 
@@ -88,13 +110,14 @@ export function VitalsStrip() {
         expected={win.expected}
         band={win.band}
         gaps={win.gaps}
+        days={win.marks}
         cursor={win.cursor}
         height={VITALS_HEIGHT}
         onSeek={(h) => {
           const rel = h - (win.cursor - hour);
           if (rel >= 0 && rel < 24) dispatch({ type: 'SEEK', hour: rel });
         }}
-        ariaSummary={`Citywide pedestrian volume for ${date} with two days either side. ${flat}.`}
+        ariaSummary={`Citywide pedestrian volume for ${win.entry.weekday} ${date}, shown across the ${win.marks.length} days from ${win.weekStart}. ${flat}.`}
       />
       <div className="pp-vitals__axis pp-t-caption pp-c-muted">
         {win.marks.map((m) => (
@@ -102,7 +125,12 @@ export function VitalsStrip() {
             key={m.date}
             className="pp-vitals__tick"
             data-current={m.date === date}
-            style={{ left: `${(m.at / win.actual.length) * 100}%` }}
+            /* Noon of the day, not its midnight: with the days banded, a label
+               sitting on a boundary belongs to neither side. traceFrac, not
+               at/length — the label was drifting half an hour off the SVG. */
+            style={{
+              left: `${traceFrac(Math.min(m.at + 12, win.actual.length - 1), win.actual.length) * 100}%`,
+            }}
           >
             {m.label}
           </span>

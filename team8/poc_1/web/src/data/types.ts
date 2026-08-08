@@ -307,3 +307,199 @@ export interface ContextFile {
 export type RenderMode = 'pulse' | 'blind';
 
 export type LayerId = 'ghost' | 'diagnosis' | 'coverage' | 'hubs' | 'tsunami' | 'routes' | 'closures';
+
+/* ------------------------------------------------------------------ week *
+ * data/week.json — the 168-hour Monday-anchored week. The reframe: a duty
+ * officer's brief is the week ahead, not yesterday's incident.
+ *
+ * `veh` = car + bus + lgv. It adds up exactly in `actual` and does NOT in
+ * baseline/forecast/band, because medians do not add. Read one series; never
+ * sum series.
+ */
+
+export const WEEK_SERIES = ['total', 'pedestrian', 'cyclist', 'car', 'bus', 'lgv', 'veh'] as const;
+export type WeekSeries = (typeof WEEK_SERIES)[number];
+
+/** One number per series. */
+export type SeriesTotals = Record<WeekSeries, number>;
+/** 168 values per series. `actual` is null from `confirmed_hours` onward. */
+export type SeriesHours = Record<WeekSeries, number[]>;
+export type SeriesHoursNullable = Record<WeekSeries, Array<number | null>>;
+
+/**
+ * confirmed = every hour in, partial = today so far, forecast = has not
+ * happened. The distinction is load-bearing: a forecast day must never be
+ * rendered the way a measured day is.
+ */
+export type WeekDayState = 'confirmed' | 'partial' | 'forecast';
+
+export interface WeekDay {
+  date: IsoDate;
+  weekday: string;
+  short: string; // "MON 3"
+  dow: number; // 0 = Monday
+  offset: number; // hour-of-week of this day's midnight
+  state: WeekDayState;
+  confirmed_hours: number;
+  baseline_n: number;
+  forecast: SeriesTotals;
+  /** Forecast for the hours that have happened — the honest denominator for a
+   *  part-day. Comparing a part-day against a whole-day forecast reads −66%. */
+  forecast_to_date: SeriesTotals | null;
+  actual: SeriesTotals | null;
+  deviation_pct: SeriesTotals | null;
+  band_lo: SeriesTotals;
+  band_hi: SeriesTotals;
+}
+
+/**
+ * "What to watch this week" — what a duty officer should EXPECT to move the
+ * numbers. Deliberately a FEED, not a hardcoded list: a stadium calendar, a
+ * MetService warning or a cruise-berth schedule all land in this shape.
+ *
+ * `applied` is the honesty flag. Nothing invented may move a published number,
+ * so an item only reads `applied: true` when a real record with a measured
+ * effect size drove the forecast.
+ */
+export interface Advisement {
+  id?: string;
+  /** Human window, e.g. "WED 17–22". Pre-formatted by the feed. */
+  when: string;
+  title: string;
+  detail?: string | null;
+  /** Signed percent the feed expects this to move movement. null = unquantified. */
+  expected_delta_pct?: number | null;
+  source: string;
+  hand_entered?: boolean;
+  applied: boolean;
+  starts?: string | null;
+  ends?: string | null;
+}
+
+/** The persistent caveats — roadworks, dark sensors, sites with no baseline. */
+export interface StandingCondition {
+  source: string;
+  kind: string;
+  tag: string; // ROADWORKS | SENSOR | NEW SITES | COVERAGE
+  window: string;
+  title: string;
+  detail?: string | null;
+  count?: number;
+  count_all_week?: number;
+  of?: number;
+  reporting_newest_day?: number;
+  effect?: string | null;
+  provenance?: string;
+  starts?: string | null;
+  ends?: string | null;
+}
+
+export interface WeekFile {
+  version: number;
+  week_start: IsoDate;
+  week_end: IsoDate;
+  iso_week: number;
+  label: string; // "WEEK 32 · 3–9 AUG"
+  tz: string;
+  t0: string;
+  hours: number; // 168
+  confirmed_hours: number;
+  horizon: {
+    cursor_index: number;
+    last_confirmed_hour: string;
+    newest_data_date: IsoDate;
+    feed_lag: string;
+    note: string;
+  };
+  series: WeekSeries[];
+  series_note: string;
+  baseline: SeriesHours;
+  forecast: SeriesHours;
+  band_lo: SeriesHours;
+  band_hi: SeriesHours;
+  actual: SeriesHoursNullable;
+  days: WeekDay[];
+  week: {
+    forecast: SeriesTotals;
+    forecast_to_date: SeriesTotals;
+    actual_to_date: SeriesTotals;
+    deviation_pct: SeriesTotals;
+  };
+  day_factors: {
+    reference_day_total: number;
+    factor: Record<string, number>;
+    n_days: Record<string, number>;
+    applied_to_forecast: boolean;
+    note: string;
+  };
+  model: {
+    formula: string;
+    baseline: string;
+    trend_factor: number;
+    trend_rule: string;
+    band: string;
+    out_of_sample: string;
+    events_applied: number;
+  };
+  advisements: Advisement[];
+  advisements_note: string;
+  standing_conditions: StandingCondition[];
+}
+
+/* ----------------------------------------------------------------- edges *
+ * data/edges.json — camera sites projected onto WCC road centrelines. An
+ * edge's numbers are INFERRED from up to four sensors; they are not a
+ * measurement of the whole stretch of street.
+ */
+
+export const EDGE_SERIES = ['total', 'pedestrian', 'veh'] as const;
+export type EdgeSeries = (typeof EDGE_SERIES)[number];
+
+export interface Edge {
+  id: string;
+  name: string;
+  suburb: string | null;
+  road_category: string | null;
+  onrc: string | null;
+  /** What the SENSORS on this edge count, not what the line is drawn as. */
+  type: 'road' | 'footpath' | 'cycleway';
+  length_m: number;
+  /** Array of polylines, [lon,lat] at 5dp — straight into a deck.gl PathLayer. */
+  path: number[][][];
+  sensors: number;
+  sensors_direct: number;
+  /** viewpoint_id, as published: STRINGS. They are the same keys `bySiteId` is
+   *  built on, and typing them as numbers made every site lookup silently miss. */
+  sensor_sites: string[];
+  weights: Record<string, number>;
+  /** Mean over confirmed hours. Use for line WEIGHT. */
+  flow_per_hour: number | null;
+  forecast_flow: number[];
+  flow: Array<number | null>;
+  /** Signed %, clamped ±200, null where the forecast is under 5/hr. COLOUR. */
+  dev: Record<EdgeSeries, Array<number | null>>;
+  day: Array<{
+    confirmed_hours: number;
+    forecast: Record<EdgeSeries, number>;
+    actual: Record<EdgeSeries, number> | null;
+    dev_pct: Record<EdgeSeries, number> | null;
+  }>;
+}
+
+export interface EdgesFile {
+  version: number;
+  week_start: IsoDate;
+  hours: number;
+  confirmed_hours: number;
+  series: EdgeSeries[];
+  n_edges: number;
+  n_sites: number;
+  dev_clamp_pct: number;
+  method: Record<string, string | number>;
+  measured: Record<string, number>;
+  edges: Edge[];
+}
+
+/** Fewer than two contributing sensors = one camera speaking for a whole
+ *  street. Rank it, grey it, never call an anomaly on it. */
+export const EDGE_JUDGED_MIN_SENSORS = 2;

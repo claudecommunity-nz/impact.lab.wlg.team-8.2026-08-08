@@ -33,6 +33,7 @@ export function ModePills() {
           variant="chip"
           className="pp-pill"
           data-active={mode === p.mode}
+          data-mode={p.mode}
           aria-pressed={mode === p.mode}
           title={p.title}
           onClick={() => dispatch({ type: 'SET_MODE', mode: p.mode })}

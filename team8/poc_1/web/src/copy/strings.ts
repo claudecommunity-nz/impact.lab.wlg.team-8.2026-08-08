@@ -59,21 +59,29 @@ export const landing = {
    *  anyone sees is also the most shareable screenshot, and both required
    *  statements were below the fold on it. */
   footerNote: 'Not live — the feed is T+1. In an emergency, call 111.',
-  lede: 'Pōneke Pulse replays Wellington’s movement, hour by hour, against what a normal day looks like. Where the two diverge, something happened.',
+  // The week, not a single day. The product is a briefing artefact for the
+  // seven days around you: four measured, three forecast, one horizon between
+  // them. The old lede sold a one-day storm replay, which is now a side tab.
+  lede: 'Pōneke Pulse forecasts how Wellington should move this week, hour by hour, and measures what actually turned up. Where the two diverge, something happened — or is about to.',
 
   forOfficer: {
     heading: 'If you are on duty',
     points: [
-      'Each camera site rises as two columns — a square for people, a triangle for vehicles. The glass case is the normal for this hour; the solid column inside it is what actually turned up. The gap at the top is the shortfall.',
-      'Pedestrians and vehicles are read separately. When walking collapses but driving holds, that is weather or an exposure hazard — not a road closure.',
-      'Changes with no known cause are the ones worth your time. A drop under a warning you already issued is not news.',
+      'The map draws streets, not sites. Line WEIGHT is how much is moving; line COLOUR is how far that is from the forecast for this hour — oxblood short, teal over.',
+      'Pedestrians and vehicles are read separately, and the per-mode signature says what kind of event it is. People gone but traffic holding is an exposure hazard; traffic gone but people walking is a road closure; both gone is loss of access.',
+      'A drop under a warning you already issued is evidence the message landed. A drop with nothing scheduled against it is the one worth your time — and a RISE tells you where people are, which is where risk concentrates.',
+      'The three days ahead are forecast. What is already scheduled — closures, events, berths — is what should move those numbers, so the week reads as a briefing rather than an alarm.',
     ],
   },
 
   howItWorks: {
     heading: 'How it works',
     body: 'For every sensor, direction, mode, weekday and hour we take the median of the trailing same-weekday-same-hours, and the spread around it. Public holidays and days when the feed failed are excluded from that baseline, so Christmas does not become the definition of normal. A street is only scored when it has enough history to be worth scoring — everything else renders as “cannot see”, never as calm.',
-    controls: 'Press play to run the day. Space plays and pauses, ← and → step an hour, 1–5 jump between replay days, G toggles the expected overlay, M and S switch between Map and Streets, Esc clears the selection, and P hides the side panels for presenting.',
+    // Only the keys that still do something on the week. The old line advertised
+    // "1–5 jump between replay days" and "G toggles the expected overlay",
+    // neither of which is a week control — a stale key hint reads as a broken
+    // feature the moment someone presses it in front of a room.
+    controls: 'Press play to run the week. Space plays and pauses, ← and → step an hour, 1–7 jump to a day, W and S switch between Week and Streets, Esc clears the selection, and P hides the side columns for presenting.',
   },
 
   limits: {
@@ -89,10 +97,12 @@ export const landing = {
     ],
   },
 
-  cta: 'Show me 23 October 2025',
-  // The warning is hand-entered everywhere else it appears; it has to be here
-  // too, because this is the screen that introduces it.
-  ctaNote: 'The day a red wind warning (hand-entered) shut Wellington down.',
+  // The button now does exactly what it says. It used to read "Show me 23
+  // October 2025" and dispatch a 2025 date that the week route's reconcile
+  // effect immediately overwrote — so the one hero action on the first screen
+  // of the demo landed you back where you started.
+  cta: 'Show me this week',
+  ctaNote: 'Four days measured, three forecast, and the hour the feed runs out marked on the chart.',
   dismiss: 'Explore on my own',
 } as const;
 

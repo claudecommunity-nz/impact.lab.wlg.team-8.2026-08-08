@@ -4,6 +4,7 @@
  */
 export { Button, type ButtonProps, type ButtonVariant } from './Button';
 export { Modal, type ModalProps } from './Modal';
+export { InfoBadge, type InfoBadgeProps } from './InfoBadge';
 export { Panel, type PanelProps } from './Panel';
 export { StatTile, type StatTileProps } from './StatTile';
 export { Legend, type LegendProps, type LegendScale } from './Legend';
