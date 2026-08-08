@@ -11,7 +11,8 @@
     "typecheck": "tsc -b --noEmit",
     "check:data": "node scripts/check-data.mjs",
     "e2e": "playwright test e2e/app.spec.ts",
-    "shots": "playwright test e2e/shots.spec.ts"
+    "shots": "playwright test e2e/shots.spec.ts",
+    "shots:readme": "playwright test e2e/readme-shots.spec.ts"
   },
   "dependencies": {
     "@deck.gl/aggregation-layers": "^9.3.7",

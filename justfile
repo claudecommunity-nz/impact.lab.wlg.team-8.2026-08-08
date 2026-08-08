@@ -73,14 +73,21 @@ poc-e2e:
 poc-shots:
     cd {{web_dir}} && npm run shots
 
+# Separate from poc-shots: those are the demo projector size (1512x900, 2x).
+#
+# The README screenshots at exactly 1920x1080 -> e2e/shots/readme.
+poc-shots-readme:
+    cd {{web_dir}} && npm run shots:readme
+
 # Production bundle -> team8/poc_1/web/dist. Fails on any type or lint error.
 poc-build: poc-install
     cd {{web_dir}} && npm run lint && npm run build
 
-# Every data file the app fetches, present and committed. Run before pushing
-# to deploy — CI runs the same check, but a clean checkout only has the tracked
-# files, so an uncommitted artefact shows up there as a 404, not a filename.
-# Not in poc-check: mid-build the pipeline output is legitimately uncommitted.
+# CI runs the same check, but a clean checkout only has the tracked files, so an
+# uncommitted artefact shows up there as a 404 rather than a filename. Kept out
+# of poc-check: mid-build the pipeline output is legitimately uncommitted.
+#
+# Every data file the app fetches, present and committed. Run before deploying.
 poc-check-data: poc-install
     cd {{web_dir}} && npm run check:data
 
