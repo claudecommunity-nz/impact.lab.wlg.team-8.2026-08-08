@@ -27,6 +27,7 @@ problem 05 — *detect unusual changes in movement around the city*.
 ![uv](https://img.shields.io/badge/uv-astral-6b6256?style=flat-square&logo=uv&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-E2E-6b6256?style=flat-square&logo=playwright&logoColor=white)
 ![GitHub Pages](https://img.shields.io/badge/GitHub_Pages-deployed-6b6256?style=flat-square&logo=githubpages&logoColor=white)
+![Licence](https://img.shields.io/badge/licence-Apache_2.0-6b6256?style=flat-square)
 
 </div>
 
@@ -206,7 +207,8 @@ and credit the publisher.
 
 <div align="center">
 
-Code is MIT. The data is not covered by it.
+Code is [Apache 2.0](LICENSE) — free to use and modify, attribution required.
+Keep the [NOTICE](NOTICE) file with it. The data is not covered by either.
 
 <sub>Impact Lab Wellington · 8 August 2026 · Wellington City Council Emergency Management × Claude Code Community NZ</sub>
 
